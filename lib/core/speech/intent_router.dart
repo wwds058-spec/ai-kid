@@ -49,18 +49,29 @@ class IntentRouter {
       ...extraKeywords,
     };
 
-    // Only check intents that are valid for this step
+    // Only check intents that are valid for this step. Keywords must match as
+    // whole words/phrases ('no' must not fire inside 'know'), and the longest
+    // matching keyword wins so "i don't know" beats a shorter 'no'.
+    String? best;
+    var bestLength = 0;
     for (final intent in candidates) {
-      final keywords = allKeywords[intent] ?? [];
-      for (final kw in keywords) {
-        if (lower == kw || lower.contains(kw)) {
-          return intent;
+      for (final kw in allKeywords[intent] ?? const <String>[]) {
+        if (kw.length > bestLength && _containsPhrase(lower, kw)) {
+          best = intent;
+          bestLength = kw.length;
         }
       }
     }
+    if (best != null) return best;
 
     return 'UNKNOWN';
   }
+
+  /// True if [phrase] occurs in [text] bounded by non-letter/digit characters.
+  static bool _containsPhrase(String text, String phrase) => RegExp(
+        '(?<![\\p{L}\\p{N}\'])${RegExp.escape(phrase)}(?![\\p{L}\\p{N}\'])',
+        unicode: true,
+      ).hasMatch(text);
 }
 
 @riverpod
