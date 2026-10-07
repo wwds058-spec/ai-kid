@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../core/security/parent_gate.dart';
 import '../../core/security/pin_service.dart';
 import '../../curriculum/episode_controller.dart';
 
@@ -91,6 +92,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
     final storage = ref.read(hiveStorageServiceProvider);
     final settings = storage.getSettings();
     storage.saveSettings(settings.copyWith(pinHash: PinService.hash(_entry)));
+    ref.read(parentGateProvider).unlock();
     context.go(Routes.parentDashboard);
   }
 
@@ -98,6 +100,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
     final settings = ref.read(hiveStorageServiceProvider).getSettings();
     final correct = PinService.verify(_entry, settings.pinHash ?? '');
     if (correct) {
+      ref.read(parentGateProvider).unlock();
       context.go(Routes.parentDashboard);
     } else {
       setState(() {
@@ -123,6 +126,10 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
         ),
       ),
       body: Center(
+        // Scrolls on short screens instead of overflowing when the
+        // wrong-attempt message appears.
+        child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 340),
           child: Column(
@@ -138,6 +145,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
                 _buildKeypad(),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -200,10 +208,13 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
         for (final row in [['1','2','3'], ['4','5','6'], ['7','8','9']])
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: row.map(_KeyButton.new).map((b) => b.onTap == null
-                ? b
-                : GestureDetector(onTap: () => _onKey(b.label), child: b))
-                .toList(),
+            children: [
+              for (final digit in row)
+                GestureDetector(
+                  onTap: () => _onKey(digit),
+                  child: _KeyButton(digit),
+                ),
+            ],
           ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -224,9 +235,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
 class _KeyButton extends StatelessWidget {
   final String label;
   final bool isDelete;
-  final VoidCallback? onTap;
-
-  const _KeyButton(this.label, {this.isDelete = false, this.onTap});
+  const _KeyButton(this.label, {this.isDelete = false});
 
   @override
   Widget build(BuildContext context) {

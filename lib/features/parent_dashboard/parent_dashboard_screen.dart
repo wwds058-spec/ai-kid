@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/purchases/purchase_service.dart';
+import '../../core/security/parent_gate.dart';
 import '../../curriculum/episode_controller.dart';
 
 /// Parent Dashboard — protected by PIN in Phase 2.
@@ -26,8 +28,11 @@ class ParentDashboardScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(Routes.worldMap),
-          // Parent dashboard only reached after PIN — go back to world map
+          // Re-lock on the way out so the next visit needs the PIN again
+          onPressed: () {
+            ref.read(parentGateProvider).lock();
+            context.go(Routes.worldMap);
+          },
         ),
       ),
       body: ListView(

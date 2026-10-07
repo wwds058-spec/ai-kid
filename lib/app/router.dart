@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../core/security/parent_gate.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/world_map/world_map_screen.dart';
 import '../features/episode_player/episode_player_screen.dart';
@@ -31,6 +32,12 @@ GoRouter appRouter(AppRouterRef ref) {
   return GoRouter(
     initialLocation: Routes.onboarding,
     debugLogDiagnostics: true,
+    // The dashboard is only reachable right after a successful PIN check.
+    redirect: (context, state) =>
+        state.matchedLocation == Routes.parentDashboard &&
+                !ref.read(parentGateProvider).isUnlocked
+            ? Routes.pinGate
+            : null,
     routes: [
       GoRoute(
         path: Routes.onboarding,
