@@ -42,3 +42,4 @@ app.*.map.json
 # build_runner output
 *.g.dart
 *.freezed.dart
+.flutter-plugins
