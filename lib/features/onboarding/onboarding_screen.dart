@@ -33,7 +33,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               const Text(
-                'Hi! I'm Aiko 👋',
+                "Hi! I'm Aiko 👋",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center,
               ),
@@ -46,7 +46,7 @@ class OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 48),
               ElevatedButton(
                 onPressed: () => context.go(Routes.worldMap),
-                child: const Text('Let's Go! 🚀'),
+                child: const Text("Let's Go! 🚀"),
               ),
               const SizedBox(height: 16),
               TextButton(

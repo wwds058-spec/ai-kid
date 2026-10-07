@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -53,10 +54,13 @@ class PurchaseService {
   /// Returns true on success.
   Future<bool> purchase(Package package) async {
     try {
-      final result = await Purchases.purchasePackage(package);
-      return _applyCustomerInfo(result.customerInfo);
-    } on PurchasesErrorCode catch (e) {
-      if (e == PurchasesErrorCode.purchaseCancelledError) return false;
+      final info = await Purchases.purchasePackage(package);
+      return _applyCustomerInfo(info);
+    } on PlatformException catch (e) {
+      if (PurchasesErrorHelper.getErrorCode(e) ==
+          PurchasesErrorCode.purchaseCancelledError) {
+        return false;
+      }
       rethrow;
     }
   }
