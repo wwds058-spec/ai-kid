@@ -25,7 +25,10 @@ class EpisodeController extends _$EpisodeController {
   Timer? _speechTimer;
 
   @override
-  EpisodeState build(String episodeId) => const EpisodeState.loading();
+  EpisodeState build(String episodeId) {
+    ref.onDispose(() => _speechTimer?.cancel());
+    return const EpisodeState.loading();
+  }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -92,6 +95,7 @@ class EpisodeController extends _$EpisodeController {
         await ref.read(audioServiceProvider).play(audio, lang: s.lang);
         state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
         _startSpeechTimeout();
+        _startListening();
 
       case DisclosureSpeech(audioOverride: final audio):
         // Play "tell a grown-up", log event (no content), advance
@@ -130,13 +134,18 @@ class EpisodeController extends _$EpisodeController {
       case AdvanceMode.speech:
         state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
         _startSpeechTimeout();
-        // Start the microphone — transcript delivered via handleSpeech()
-        final running = state as EpisodeRunning;
-        ref.read(speechServiceProvider).startListening(
+        _startListening();
+    }
+  }
+
+  /// Start the microphone — transcript delivered via [handleSpeech].
+  void _startListening() {
+    final running = _runningOrNull();
+    if (running == null) return;
+    ref.read(speechServiceProvider).startListening(
           localeId: speechLocale(running.lang),
           onResult: handleSpeech,
         );
-    }
   }
 
   Future<void> _nextStep() async {
@@ -180,7 +189,11 @@ class EpisodeController extends _$EpisodeController {
     if (s == null) return;
     final step = s.script.steps[s.stepIndex];
     _speechTimer = Timer(Duration(seconds: step.timeoutSeconds), () async {
-      // Timeout — stop mic, play fallback, advance
+      // Timeout — stop mic, play fallback, advance. Clear the awaiting flag
+      // first so a late transcript can't be applied to the next step.
+      final current = _runningOrNull();
+      if (current == null || !current.awaitingSpeech) return;
+      state = current.copyWith(awaitingSpeech: false);
       await ref.read(speechServiceProvider).stopListening();
       final fallback = step.fallback ?? 'generic_fallback';
       await ref.read(audioServiceProvider).play(fallback, lang: s.lang);

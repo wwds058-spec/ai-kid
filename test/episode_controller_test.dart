@@ -1,0 +1,215 @@
+import 'package:ai_explorer/core/audio/audio_service.dart';
+import 'package:ai_explorer/core/speech/speech_service.dart';
+import 'package:ai_explorer/core/storage/hive_storage_service.dart';
+import 'package:ai_explorer/core/storage/models/episode_progress.dart';
+import 'package:ai_explorer/core/storage/models/parent_settings.dart';
+import 'package:ai_explorer/curriculum/episode_controller.dart';
+import 'package:ai_explorer/curriculum/episode_loader.dart';
+import 'package:ai_explorer/curriculum/models/episode_script.dart';
+import 'package:ai_explorer/curriculum/models/episode_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+class FakeAudio extends Fake implements AudioService {
+  final played = <String>[];
+  @override
+  Future<void> play(String lineId, {String lang = 'en'}) async =>
+      played.add(lineId);
+}
+
+class FakeSpeech extends Fake implements SpeechService {
+  int started = 0;
+  int stopped = 0;
+  @override
+  Future<void> startListening({
+    required String localeId,
+    required void Function(String transcript) onResult,
+  }) async =>
+      started++;
+  @override
+  Future<void> stopListening() async => stopped++;
+  @override
+  void dispose() {}
+}
+
+class FakeStorage extends Fake implements HiveStorageService {
+  final progress = <String, EpisodeProgress>{};
+  ParentSettings settings = const ParentSettings();
+  @override
+  EpisodeProgress? getProgress(String id) => progress[id];
+  @override
+  Future<void> saveProgress(EpisodeProgress p) async =>
+      progress[p.episodeId] = p;
+  @override
+  ParentSettings getSettings() => settings;
+  @override
+  Future<void> saveSettings(ParentSettings s) async => settings = s;
+}
+
+class FakeLoader extends Fake implements EpisodeLoader {
+  FakeLoader(this.script);
+  final EpisodeScript script;
+  @override
+  Future<EpisodeScript> load(String episodeId) async => script;
+}
+
+EpisodeScript _script({int timeout = 8}) => EpisodeScript(
+      id: 'pf_test',
+      world: 'pattern_forest',
+      title: const {'en': 'Test'},
+      steps: [
+        const EpisodeStep(
+            id: 's1', type: StepType.watch, audio: 'a1', advance: AdvanceMode.auto),
+        const EpisodeStep(
+            id: 's2', type: StepType.watch, audio: 'a2', advance: AdvanceMode.tap),
+        const EpisodeStep(
+          id: 's3',
+          type: StepType.play,
+          audio: 'a3',
+          advance: AdvanceMode.correctAnswer,
+          gameConfig: GameConfig(answer: 'blue'),
+          onWrong: 'wrong',
+        ),
+        EpisodeStep(
+          id: 's4',
+          type: StepType.speak,
+          audio: 'a4',
+          advance: AdvanceMode.speech,
+          timeoutSeconds: timeout,
+          intents: const [
+            IntentResponse(match: 'YES', audio: 'r_yes'),
+            IntentResponse(match: 'DONT_KNOW', audio: 'r_dk'),
+          ],
+          fallback: 'fb',
+        ),
+        const EpisodeStep(
+          id: 's5',
+          type: StepType.reward,
+          audio: 'a5',
+          advance: AdvanceMode.auto,
+          badge: 'pattern_spotter',
+        ),
+      ],
+    );
+
+void main() {
+  late FakeAudio audio;
+  late FakeSpeech speech;
+  late FakeStorage storage;
+  late ProviderContainer container;
+
+  EpisodeController ctrl() =>
+      container.read(episodeControllerProvider('pf_test').notifier);
+  EpisodeState st() => container.read(episodeControllerProvider('pf_test'));
+
+  Future<void> boot({int timeout = 8}) async {
+    audio = FakeAudio();
+    speech = FakeSpeech();
+    storage = FakeStorage();
+    container = ProviderContainer(overrides: [
+      episodeLoaderProvider.overrideWithValue(FakeLoader(_script(timeout: timeout))),
+      audioServiceProvider.overrideWithValue(audio),
+      speechServiceProvider.overrideWithValue(speech),
+      hiveStorageServiceProvider.overrideWithValue(storage),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(episodeControllerProvider('pf_test'), (_, __) {});
+    await ctrl().start();
+  }
+
+  Future<void> reachSpeakStep() async {
+    await ctrl().handleTap();
+    await ctrl().handleAnswer('blue');
+  }
+
+  test('auto step plays then waits for tap on step 2', () async {
+    await boot();
+    final s = st() as EpisodeRunning;
+    expect(s.stepIndex, 1);
+    expect(s.awaitingTap, isTrue);
+    expect(audio.played, ['a1', 'a2']);
+  });
+
+  test('tap is ignored when not awaiting a tap', () async {
+    await boot();
+    await ctrl().handleTap();
+    await ctrl().handleTap(); // now on answer step; extra tap must do nothing
+    expect((st() as EpisodeRunning).stepIndex, 2);
+  });
+
+  test('wrong answer plays onWrong and stays; right answer advances', () async {
+    await boot();
+    await ctrl().handleTap();
+    await ctrl().handleAnswer('red');
+    expect(audio.played.last, 'wrong');
+    expect((st() as EpisodeRunning).stepIndex, 2);
+    await ctrl().handleAnswer('blue');
+    final s = st() as EpisodeRunning;
+    expect(s.stepIndex, 3);
+    expect(s.awaitingSpeech, isTrue);
+    expect(speech.started, 1);
+  });
+
+  test('matched speech plays the intent audio and completes the episode',
+      () async {
+    await boot();
+    await reachSpeakStep();
+    await ctrl().handleSpeech('yes');
+    expect(audio.played, containsAllInOrder(['a4', 'r_yes', 'a5']));
+    final s = st();
+    expect(s, isA<EpisodeComplete>());
+    expect((s as EpisodeComplete).badgesEarned, ['pattern_spotter']);
+    expect(storage.progress['pf_test']!.completed, isTrue);
+    expect(storage.progress['pf_test']!.badgesEarned, ['pattern_spotter']);
+  });
+
+  test('unrecognised speech plays the step fallback and advances', () async {
+    await boot();
+    await reachSpeakStep();
+    await ctrl().handleSpeech('banana');
+    expect(audio.played, contains('fb'));
+    expect(st(), isA<EpisodeComplete>());
+  });
+
+  test('"i don\'t know" resolves to DONT_KNOW, not NO', () async {
+    await boot();
+    await reachSpeakStep();
+    await ctrl().handleSpeech("i don't know");
+    expect(audio.played, contains('r_dk'));
+  });
+
+  test('blocked speech replays fallback, stays, and restarts the mic', () async {
+    await boot();
+    await reachSpeakStep();
+    await ctrl().handleSpeech('where do you live');
+    expect(audio.played.last, 'generic_fallback');
+    final s = st() as EpisodeRunning;
+    expect(s.stepIndex, 3);
+    expect(s.awaitingSpeech, isTrue);
+    expect(speech.started, 2);
+  });
+
+  test('disclosure plays safety audio, logs a timestamp only, and advances',
+      () async {
+    await boot();
+    await reachSpeakStep();
+    await ctrl().handleSpeech("someone hits me and says don't tell");
+    expect(audio.played, contains('safety_tell_grownup'));
+    expect(storage.settings.disclosureLog, hasLength(1));
+    expect(storage.settings.disclosureLog.single,
+        isNot(contains('hits me'))); // no transcript content stored
+    expect(st(), isA<EpisodeComplete>());
+  });
+
+  test('speech timeout plays fallback and advances; late transcript ignored',
+      () async {
+    await boot(timeout: 1);
+    await reachSpeakStep();
+    await Future<void>.delayed(const Duration(milliseconds: 1300));
+    expect(audio.played, contains('fb'));
+    expect(st(), isA<EpisodeComplete>());
+    final playedBefore = audio.played.length;
+    await ctrl().handleSpeech('yes'); // arrives after timeout
+    expect(audio.played.length, playedBefore);
+  });
+}

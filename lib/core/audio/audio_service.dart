@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -25,8 +24,9 @@ class AudioService {
       await _player.stop();
       await _player.setAsset(path);
       await _player.play();
-    } on PlatformException catch (e) {
-      // File missing in dev — log and continue so the engine doesn't stall
+    } catch (e) {
+      // File missing in dev (just_audio may throw PlayerException or
+      // PlatformException) — log and continue so the engine doesn't stall
       // ignore: avoid_print
       print('[AudioService] Missing asset: $path — $e');
     }
