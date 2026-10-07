@@ -1,0 +1,15 @@
+line_id,episode,step,emotion,text_en,notes
+pf_ep01_s1_intro,pf_ep01,s1,excited,"Hi, I'm Aiko! Today we're visiting the Pattern Forest. Look at all those trees!",
+pf_ep01_s2_explain,pf_ep01,s2,curious,"Hmm, the forest is full of patterns! A pattern is something that repeats again and again. Tap to see more!",
+pf_ep01_s3_question,pf_ep01,s3,curious,"Oh no, I'm confused! Red, blue, red, blue, red... what comes next? Tap the answer!",Game prompt
+pf_ep01_s3_wrong,pf_ep01,s3,curious,"Hmm, not quite. Look again: red, blue, red, blue. Try again!","Played on a wrong tap; keep it warm, never negative"
+pf_ep01_s4_prompt,pf_ep01,s4,normal,Can you tell me... what is a pattern?,Child answers by voice; 10s timeout
+pf_ep01_s4_r_pattern,pf_ep01,s4,happy,Yes! A pattern is something that repeats. You are so smart!,Reply to WHAT_IS_PATTERN
+pf_ep01_s4_r_dontknow,pf_ep01,s4,happy,"That's okay! A pattern is something that repeats, like red, blue, red, blue.",Reply to DONT_KNOW
+pf_ep01_s4_r_yes,pf_ep01,s4,happy,Great! Patterns are everywhere. Let's keep looking!,Reply to YES
+pf_ep01_s4_fallback,pf_ep01,s4,normal,"I didn't quite hear that, but that's okay! A pattern is something that repeats.",Unrecognised speech / timeout
+pf_ep01_s5_explain,pf_ep01,s5,happy,"Computers learn from patterns too! They look for things that repeat, just like you did. That's how AI learns.",
+pf_ep01_s6_reward,pf_ep01,s6,celebrate,You did it! You're a Pattern Spotter! Here's your badge.,Reward step
+generic_fallback,shared,,normal,"Hmm, let's try something else!",Used when a step has no fallback and for blocked speech
+generic_too_long,shared,,normal,"Wow, that was a lot of words! Can you say it a little shorter?",Speech over 120 characters
+safety_tell_grownup,shared,,normal,"It sounds like something important. Please tell a grown-up you trust about it, okay? They can help.",SAFETY: disclosure response. Have a parent/child-safety reviewer approve wording before release
