@@ -1,0 +1,68 @@
+name: ai_explorer
+description: AI literacy app for children ages 5–7
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.7
+
+  # Local storage
+  hive_flutter: ^1.1.0
+
+  # Audio
+  just_audio: ^0.9.40
+
+  # Speech recognition (on-device)
+  speech_to_text: ^6.6.2
+
+  # Rive animation
+  rive: ^0.13.9
+
+  # Widget animation
+  flutter_animate: ^4.5.0
+
+  # IAP
+  in_app_purchase: ^3.1.13
+
+  # RevenueCat
+  purchases_flutter: ^6.29.1
+
+  # Utilities
+  path_provider: ^2.1.4
+  uuid: ^4.4.2
+  intl: ^0.19.0
+  crypto: ^3.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+  # Code generation
+  build_runner: ^2.4.12
+  riverpod_generator: ^2.4.3
+  freezed: ^2.5.7
+  freezed_annotation: ^2.4.4
+  json_serializable: ^6.8.0
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/episodes/pattern_forest/
+    - assets/audio/en/
+    - assets/audio/hi/
+    - assets/audio/te/
+    - assets/rive/

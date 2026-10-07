@@ -1,0 +1,232 @@
+import 'dart:async';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../core/audio/audio_service.dart';
+import '../core/safety/safety_layer.dart';
+import '../core/speech/intent_router.dart';
+import '../core/speech/speech_service.dart';
+import '../core/storage/hive_storage_service.dart';
+import '../core/storage/models/episode_progress.dart';
+import 'episode_loader.dart';
+import 'models/episode_script.dart';
+import 'models/episode_state.dart';
+
+part 'episode_controller.g.dart';
+
+/// The central controller for a playing episode.
+///
+/// Parameterised by episodeId so each episode gets its own provider family slot.
+/// UI observes [EpisodeState] and calls [handleTap], [handleAnswer], [handleSpeech].
+///
+/// Episode lifecycle:
+///   loading → [start()] → running (step loop) → complete
+@riverpod
+class EpisodeController extends _$EpisodeController {
+  Timer? _speechTimer;
+
+  @override
+  EpisodeState build(String episodeId) => const EpisodeState.loading();
+
+  // ── Public API ─────────────────────────────────────────────────────────────
+
+  /// Called once by EpisodePlayerScreen after navigating to it.
+  Future<void> start({String lang = 'en'}) async {
+    state = const EpisodeState.loading();
+    try {
+      final script = await ref.read(episodeLoaderProvider).load(episodeId);
+      state = EpisodeState.running(script: script, stepIndex: 0, lang: lang);
+      await _runStep(script.steps.first);
+    } catch (e) {
+      state = EpisodeState.error('Failed to load episode: $e');
+    }
+  }
+
+  /// User tapped the screen (advance TAP steps)
+  Future<void> handleTap() async {
+    final s = _runningOrNull();
+    if (s == null) return;
+    if (!s.awaitingTap) return;
+    state = s.copyWith(awaitingTap: false);
+    await _nextStep();
+  }
+
+  /// User submitted a game answer (PLAY steps)
+  Future<void> handleAnswer(String answer) async {
+    final s = _runningOrNull();
+    if (s == null) return;
+    if (!s.awaitingAnswer) return;
+
+    final step = s.script.steps[s.stepIndex];
+    final correct = step.gameConfig?.answer == answer;
+
+    if (correct) {
+      state = s.copyWith(awaitingAnswer: false);
+      await _nextStep();
+    } else {
+      // Play wrong-answer audio and let them try again
+      if (step.onWrong != null) {
+        await ref.read(audioServiceProvider).play(step.onWrong!, lang: s.lang);
+      }
+    }
+  }
+
+  /// Called by SpeechService when on-device STT produces a transcript.
+  Future<void> handleSpeech(String transcript) async {
+    final s = _runningOrNull();
+    if (s == null) return;
+    if (!s.awaitingSpeech) return;
+
+    _speechTimer?.cancel();
+    await ref.read(speechServiceProvider).stopListening();
+    state = s.copyWith(awaitingSpeech: false);
+
+    // ── Safety layer ──────────────────────────────────────────────────────
+    final safety = ref.read(safetyLayerProvider).validate(transcript);
+
+    switch (safety) {
+      case SafeSpeech():
+        await _processIntent(transcript, s);
+
+      case BlockedSpeech(audioOverride: final audio):
+        // Play fallback, stay on same step, re-enable speech
+        await ref.read(audioServiceProvider).play(audio, lang: s.lang);
+        state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
+        _startSpeechTimeout();
+
+      case DisclosureSpeech(audioOverride: final audio):
+        // Play "tell a grown-up", log event (no content), advance
+        await ref.read(audioServiceProvider).play(audio, lang: s.lang);
+        _logDisclosure();
+        await _nextStep();
+    }
+  }
+
+  // ── Private ────────────────────────────────────────────────────────────────
+
+  Future<void> _runStep(EpisodeStep step) async {
+    final s = _runningOrNull();
+    if (s == null) return;
+
+    // Set Aiko emotion (UI observes this separately via aikoController)
+    // We emit it on state so EpisodePlayerScreen can forward it
+    state = s.copyWith(awaitingSpeech: false, awaitingTap: false, awaitingAnswer: false);
+
+    // Play the step's audio
+    await ref.read(audioServiceProvider).play(step.audio, lang: s.lang);
+
+    // Wait for audio to finish before advancing (for AUTO)
+    // For other advance modes, set the awaiting flag
+
+    switch (step.advance) {
+      case AdvanceMode.auto:
+        await _nextStep();
+
+      case AdvanceMode.tap:
+        state = (state as EpisodeRunning).copyWith(awaitingTap: true);
+
+      case AdvanceMode.correctAnswer:
+        state = (state as EpisodeRunning).copyWith(awaitingAnswer: true);
+
+      case AdvanceMode.speech:
+        state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
+        _startSpeechTimeout();
+        // Start the microphone — transcript delivered via handleSpeech()
+        final running = state as EpisodeRunning;
+        ref.read(speechServiceProvider).startListening(
+          localeId: speechLocale(running.lang),
+          onResult: handleSpeech,
+        );
+    }
+  }
+
+  Future<void> _nextStep() async {
+    final s = _runningOrNull();
+    if (s == null) return;
+
+    final nextIndex = s.stepIndex + 1;
+
+    if (nextIndex >= s.script.steps.length) {
+      // Episode complete — save progress
+      await _saveProgress(s);
+      state = EpisodeState.complete(
+        episodeId: episodeId,
+        badgesEarned: _collectBadges(s.script),
+      );
+      return;
+    }
+
+    state = s.copyWith(stepIndex: nextIndex);
+    await _runStep(s.script.steps[nextIndex]);
+  }
+
+  Future<void> _processIntent(String transcript, EpisodeRunning s) async {
+    final step = s.script.steps[s.stepIndex];
+    final candidates = step.intents.map((i) => i.match).toList();
+
+    final intent = ref.read(intentRouterProvider).match(
+          transcript: transcript,
+          candidates: candidates,
+        );
+
+    final matched = step.intents.where((i) => i.match == intent).firstOrNull;
+    final audioId = matched?.audio ?? step.fallback ?? 'generic_fallback';
+
+    await ref.read(audioServiceProvider).play(audioId, lang: s.lang);
+    await _nextStep();
+  }
+
+  void _startSpeechTimeout() {
+    final s = _runningOrNull();
+    if (s == null) return;
+    final step = s.script.steps[s.stepIndex];
+    _speechTimer = Timer(Duration(seconds: step.timeoutSeconds), () async {
+      // Timeout — stop mic, play fallback, advance
+      await ref.read(speechServiceProvider).stopListening();
+      final fallback = step.fallback ?? 'generic_fallback';
+      await ref.read(audioServiceProvider).play(fallback, lang: s.lang);
+      await _nextStep();
+    });
+  }
+
+  List<String> _collectBadges(EpisodeScript script) {
+    return script.steps
+        .where((s) => s.type == StepType.reward && s.badge != null)
+        .map((s) => s.badge!)
+        .toList();
+  }
+
+  Future<void> _saveProgress(EpisodeRunning s) async {
+    final storage = ref.read(hiveStorageServiceProvider);
+    final existing = storage.getProgress(episodeId);
+    await storage.saveProgress(
+      EpisodeProgress(
+        episodeId: episodeId,
+        completed: true,
+        lastStepIndex: s.script.steps.length - 1,
+        badgesEarned: [
+          ...?existing?.badgesEarned,
+          ..._collectBadges(s.script),
+        ],
+        lastPlayedAt: DateTime.now(),
+        totalPlaySeconds: (existing?.totalPlaySeconds ?? 0),
+      ),
+    );
+  }
+
+  void _logDisclosure() {
+    // Log timestamp only — no transcript content stored
+    final storage = ref.read(hiveStorageServiceProvider);
+    final settings = storage.getSettings();
+    final log = [...settings.disclosureLog, DateTime.now().toIso8601String()];
+    storage.saveSettings(settings.copyWith(disclosureLog: log));
+  }
+
+  EpisodeRunning? _runningOrNull() =>
+      state is EpisodeRunning ? state as EpisodeRunning : null;
+}
+
+// ── Storage provider ─────────────────────────────────────────────────────────
+
+@riverpod
+HiveStorageService hiveStorageService(HiveStorageServiceRef ref) =>
+    HiveStorageService();

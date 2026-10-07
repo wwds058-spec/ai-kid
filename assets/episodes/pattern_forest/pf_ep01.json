@@ -1,0 +1,71 @@
+{
+  "id": "pf_ep01",
+  "world": "pattern_forest",
+  "title": {
+    "en": "Aiko Gets Confused",
+    "hi": "Aiko उलझ गई",
+    "te": "Aiko కంగారుపడింది"
+  },
+  "premium": false,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "watch",
+      "audio": "pf_ep01_s1_intro",
+      "emotion": "excited",
+      "scene": "forest_intro",
+      "advance": "auto"
+    },
+    {
+      "id": "s2",
+      "type": "watch",
+      "audio": "pf_ep01_s2_explain",
+      "emotion": "curious",
+      "scene": "forest_pattern",
+      "advance": "tap"
+    },
+    {
+      "id": "s3",
+      "type": "play",
+      "audio": "pf_ep01_s3_question",
+      "emotion": "curious",
+      "game": "pattern_tap",
+      "gameConfig": {
+        "items": ["🔴", "🔵", "🔴", "🔵", "🔴", "❓"],
+        "answer": "🔵"
+      },
+      "onWrong": "pf_ep01_s3_wrong",
+      "advance": "correctAnswer"
+    },
+    {
+      "id": "s4",
+      "type": "speak",
+      "audio": "pf_ep01_s4_prompt",
+      "emotion": "normal",
+      "intents": [
+        { "match": "WHAT_IS_PATTERN", "audio": "pf_ep01_s4_r_pattern" },
+        { "match": "DONT_KNOW",       "audio": "pf_ep01_s4_r_dontknow" },
+        { "match": "YES",             "audio": "pf_ep01_s4_r_yes" }
+      ],
+      "fallback": "pf_ep01_s4_fallback",
+      "advance": "speech",
+      "timeoutSeconds": 10
+    },
+    {
+      "id": "s5",
+      "type": "watch",
+      "audio": "pf_ep01_s5_explain",
+      "emotion": "happy",
+      "scene": "forest_pattern",
+      "advance": "tap"
+    },
+    {
+      "id": "s6",
+      "type": "reward",
+      "badge": "pattern_spotter",
+      "audio": "pf_ep01_s6_reward",
+      "emotion": "celebrate",
+      "advance": "tap"
+    }
+  ]
+}
