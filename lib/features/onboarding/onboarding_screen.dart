@@ -50,7 +50,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => context.go(Routes.parentDashboard),
+                onPressed: () => context.go(Routes.pinGate),
                 child: Text(
                   'Parent / Settings',
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/security/pin_service.dart';
 import '../../curriculum/episode_controller.dart';
@@ -90,14 +91,14 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
     final storage = ref.read(hiveStorageServiceProvider);
     final settings = storage.getSettings();
     storage.saveSettings(settings.copyWith(pinHash: PinService.hash(_entry)));
-    context.go('/parent-dashboard');
+    context.go(Routes.parentDashboard);
   }
 
   void _verify() {
     final settings = ref.read(hiveStorageServiceProvider).getSettings();
     final correct = PinService.verify(_entry, settings.pinHash ?? '');
     if (correct) {
-      context.go('/parent-dashboard');
+      context.go(Routes.parentDashboard);
     } else {
       setState(() {
         _wrongAttempts++;
@@ -118,7 +119,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/world-map'),
+          onPressed: () => context.go(Routes.worldMap),
         ),
       ),
       body: Center(

@@ -47,7 +47,7 @@ class WorldMapScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
-            onPressed: () => context.go(Routes.parentDashboard),
+            onPressed: () => context.go(Routes.pinGate),
           ),
         ],
       ),

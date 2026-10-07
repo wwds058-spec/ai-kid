@@ -33,6 +33,9 @@ class IntentRouter {
     'SKIP':             ['skip', 'next', 'aage', 'go next'],
   };
 
+  /// Intent names understood without episode-specific [extraKeywords].
+  static Set<String> get knownIntents => _intentKeywords.keys.toSet();
+
   /// Match [transcript] against [candidates] (the intents valid for this step).
   /// Returns the matched intent name or 'UNKNOWN'.
   String match({
