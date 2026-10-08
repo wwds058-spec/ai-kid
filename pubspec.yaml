@@ -56,6 +56,8 @@ dev_dependencies:
   json_serializable: ^6.8.0
   # test/support/rive_inspect.dart reads .riv files with the runtime's decoders
   rive_common: 0.4.15  # same version rive 0.13.20 resolves
+  # test/ci_workflow_test.dart parses the CI workflow
+  yaml: ^3.1.4
 
 flutter:
   uses-material-design: true

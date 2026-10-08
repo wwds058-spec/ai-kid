@@ -112,7 +112,7 @@ jobs:
           mkdir -p store && cp "$AAB" store/ai-explorer-store.aab
           rm -f "$ANDROID_UPLOAD_STORE_FILE"
 
-      - name: Verify the built APK: API 36, package and label
+      - name: Verify the built APK (API 36, package, label)
         run: |
           AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
           "$AAPT2" dump badging build/app/outputs/flutter-apk/app-debug.apk | tee badging.txt | grep -E "sdkVersion|targetSdkVersion|compileSdkVersion"
