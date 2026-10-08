@@ -20,7 +20,7 @@ const _stepKeys = {
   'onWrong', 'intents', 'fallback', 'timeoutSeconds', 'badge',
 };
 const _gameConfigKeys = {'items', 'answer', 'extra'};
-const _intentKeys = {'match', 'audio'};
+const _intentKeys = {'match', 'audio', 'emotion'};
 
 void main() {
   final files = loadEpisodeFiles();

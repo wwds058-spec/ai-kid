@@ -53,7 +53,7 @@ class EpisodeCatalog {
       prefix: 'ml',
       emoji: '🎵',
       color: 0xFF7C3AED,
-      episodes: [],
+      episodes: [CatalogEpisode('ml_ep01', premium: true)],
     ),
     CatalogWorld(
       id: 'gadget_city',

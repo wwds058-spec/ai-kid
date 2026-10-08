@@ -4,4 +4,5 @@ const kBadgeEmoji = <String, String>{
   'pattern_spotter': '🔍',
   'ai_friend': '🤝',
   'data_collector': '📊',
+  'beat_finder': '🥁',
 };

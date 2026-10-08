@@ -87,15 +87,37 @@ void main() {
     expect(find.text('EPISODE pf_ep02'), findsOneWidget);
   });
 
-  testWidgets('worlds without episodes show "Coming soon" and do nothing',
-      (tester) async {
-    await tester.pumpWidget(_app(const WorldMapScreen()));
-    expect(find.text('🌱 Coming soon'), findsNWidgets(2));
-    expect(find.text('🔒 Premium'), findsNothing);
-    await tester.tap(find.text('Music Lab'));
-    await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
-    expect(find.textContaining('EPISODE'), findsNothing);
+  group('shipped catalog', () {
+    testWidgets('free: Music Lab locked, Gadget City coming soon',
+        (tester) async {
+      await tester.pumpWidget(_app(const WorldMapScreen()));
+      expect(find.text('🔒 Premium'), findsOneWidget);
+      expect(find.text('🌱 Coming soon'), findsOneWidget);
+      await tester.tap(find.text('Music Lab'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Ask a grown-up'), findsOneWidget);
+      expect(find.textContaining('EPISODE'), findsNothing);
+    });
+
+    testWidgets('premium: Music Lab opens its premium episode',
+        (tester) async {
+      await tester.pumpWidget(_app(const WorldMapScreen(),
+          storage: FakeStorage(sub: const SubscriptionState(isPremium: true))));
+      expect(find.text('🔒 Premium'), findsNothing);
+      await tester.tap(find.text('Music Lab'));
+      await tester.pumpAndSettle();
+      expect(find.text('EPISODE ml_ep01'), findsOneWidget);
+    });
+
+    testWidgets('Gadget City (no episodes) does nothing for anyone',
+        (tester) async {
+      await tester.pumpWidget(_app(const WorldMapScreen(),
+          storage: FakeStorage(sub: const SubscriptionState(isPremium: true))));
+      await tester.tap(find.text('Gadget City'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.textContaining('EPISODE'), findsNothing);
+    });
   });
 
   testWidgets('all-premium world is locked and asks for a grown-up',

@@ -99,6 +99,7 @@ class AppStrings {
       'pattern_spotter': BadgeText('Pattern Spotter', 'You found the pattern!'),
       'ai_friend': BadgeText('AI Friend', 'You worked with Aiko!'),
       'data_collector': BadgeText('Data Collector', 'You collected data!'),
+      'beat_finder': BadgeText('Beat Finder', 'You found the beat!'),
     },
     loadError: 'Oops! Something went wrong.',
   );
@@ -131,6 +132,7 @@ class AppStrings {
       'pattern_spotter': BadgeText('पैटर्न खोजी', 'तुमने पैटर्न ढूँढ लिया!'),
       'ai_friend': BadgeText('AI दोस्त', 'तुमने आइको के साथ काम किया!'),
       'data_collector': BadgeText('डेटा संग्राहक', 'तुमने डेटा इकट्ठा किया!'),
+      'beat_finder': BadgeText('ताल खोजी', 'तुमने ताल ढूँढ ली!'),
     },
     loadError: 'उफ़! कुछ गड़बड़ हो गई।',
   );
@@ -164,6 +166,7 @@ class AppStrings {
           BadgeText('ప్యాటర్న్ స్పాటర్', 'నువ్వు ప్యాటర్న్‌ను కనిపెట్టావు!'),
       'ai_friend': BadgeText('AI స్నేహితుడు', 'నువ్వు ఐకోతో కలిసి పనిచేశావు!'),
       'data_collector': BadgeText('డేటా కలెక్టర్', 'నువ్వు డేటాను సేకరించావు!'),
+      'beat_finder': BadgeText('బీట్ ఫైండర్', 'నువ్వు తాళం కనిపెట్టావు!'),
     },
     loadError: 'అయ్యో! ఏదో తప్పు జరిగింది.',
   );

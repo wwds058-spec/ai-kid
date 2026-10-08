@@ -9,6 +9,71 @@
     "sha256": "fa35170b15b5aed90579d89f2a17a325a5e9d145189d3fefd59ed06e113fa4d5",
     "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
   },
+  "ml_ep01_s1_intro": {
+    "source": "placeholder",
+    "sha256": "da38977028470b834bbb8219f6cb370bd82ce92d090e8dd184b2e808002ddd33",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s2_question": {
+    "source": "placeholder",
+    "sha256": "cd00f78aa5930b6d764a835791b425105cd2db6ec5adf1ced216712325e9d265",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s2_wrong": {
+    "source": "placeholder",
+    "sha256": "cc388d17b9c3ba031d9c342d7f0d3dd6830d6cd066b016df298e614218a90e0d",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s3_explain": {
+    "source": "placeholder",
+    "sha256": "84753e988a9e53ec1286782043cf506d5c6ee26ed84bb02a2f882c85a7868589",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_fallback": {
+    "source": "placeholder",
+    "sha256": "c84c309cd769dc087954acc6575c55de31203c861ea5bf6c15e53f9b14c41c0c",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_prompt": {
+    "source": "placeholder",
+    "sha256": "fccf2a713c4a4770caf6fe4f8ab0254e96428a732ab90002c24a3ed6c8ea021a",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_r_dontknow": {
+    "source": "placeholder",
+    "sha256": "c00d7a1b854c16d933b08a8f7cdff04c65c6555ec34dc03fbfbf7ebe82d866c4",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_r_music": {
+    "source": "placeholder",
+    "sha256": "615f0113cd4a2a157ff2b3cafb67f1e31e1505abcf063a8d4463ad50289aced2",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_r_no": {
+    "source": "placeholder",
+    "sha256": "8b934eea0bd4fc0c278825e6a5f49582ee737f7fbbc2cdc21042d3db2a967cd5",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s4_r_yes": {
+    "source": "placeholder",
+    "sha256": "be4adfee8723a8cdfcc09779ea48acaf6fd8ddee13cc4628180c03d1d4661ee9",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s5_question": {
+    "source": "placeholder",
+    "sha256": "f73d3f1953da24fb97abf96ffe638c2be45588a24717d89ee8991181b9ff48f4",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s5_wrong": {
+    "source": "placeholder",
+    "sha256": "d439a5a76ecce0ef0879066de0efbd7ca190112d35a4d07d51570dd3819e6d9d",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "ml_ep01_s6_reward": {
+    "source": "placeholder",
+    "sha256": "6a86138cc215ce277c972786d97531c54fdd995bf09cc1ec3ee3956a422a317e",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
   "pf_ep01_s1_intro": {
     "source": "placeholder",
     "sha256": "85f018006d0970d790cfea33ba9c611ed38134041063e4dd5b1e6ca7fc5db348",

@@ -21,6 +21,19 @@ pf_ep02_s5_r_shapes,"ఆకారాలు! నేల, టైల్స్, భ�
 pf_ep02_s5_r_dontknow,పర్వాలేదు! తర్వాత నీ నేలను లేదా బట్టలను చూడు. నీకు ఏదైనా ప్యాటర్న్ దొరకొచ్చు!,DRAFT translation - needs native-speaker review
 pf_ep02_s5_fallback,ఎంత సరదా ఆలోచన! ప్యాటర్న్‌లు మన చుట్టూ దాక్కుని ఉన్నాయి.,DRAFT translation - needs native-speaker review
 pf_ep02_s6_reward,అద్భుతం! ఉదాహరణల నుంచి నేర్చుకోవడానికి నువ్వు నాకు సహాయం చేశావు. నువ్వు డేటా కలెక్టర్!,DRAFT translation - needs native-speaker review
+ml_ep01_s1_intro,"సంగీత ల్యాబ్‌కు స్వాగతం! విను: ఢం, చప్పట్లు, ఢం, చప్పట్లు! సంగీతంలో కూడా ప్యాటర్న్‌లు ఉంటాయి!",DRAFT translation - needs native-speaker review
+ml_ep01_s2_question,"డప్పు, చప్పట్లు, డప్పు, చప్పట్లు, డప్పు... తర్వాత ఏది వస్తుంది? సరైన జవాబును తాకు!",DRAFT translation - needs native-speaker review
+ml_ep01_s2_wrong,"మళ్లీ విను: డప్పు, చప్పట్లు, డప్పు, చప్పట్లు. డప్పు తర్వాత ఏది వస్తుంది?",DRAFT translation - needs native-speaker review
+ml_ep01_s3_explain,"చాలా ఉదాహరణలు వినడం ద్వారా కంప్యూటర్లు డప్పుకు, చప్పట్లకు తేడా తెలుసుకోగలవు. AI వినడం నేర్చుకోవడం అంటే అదే!",DRAFT translation - needs native-speaker review
+ml_ep01_s4_prompt,నీకు పాడటం లేదా డ్యాన్స్ చేయడం ఇష్టమా?,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_music,"నాకు కూడా! నువ్వు పాడినప్పుడు లేదా డ్యాన్స్ చేసినప్పుడు, నీ గొంతుతో, కాళ్లతో ప్యాటర్న్‌లు చేస్తావు!",DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_yes,హుర్రే! కలిసి పంచుకుంటే సంగీతం ఇంకా సరదాగా ఉంటుంది.,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_no,పర్వాలేదు! నువ్వు ఊరికే వినవచ్చు. వినడం కూడా ఒక సూపర్ పవర్.,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_dontknow,"పర్వాలేదు! కొంచెం చప్పట్లు కొడదాం: చప్పట్లు, చప్పట్లు, చప్పట్లు!",DRAFT translation - needs native-speaker review
+ml_ep01_s4_fallback,నీ గొంతు వినడం నాకు చాలా ఇష్టం! ఇంకో ప్యాటర్న్ చేద్దాం.,DRAFT translation - needs native-speaker review
+ml_ep01_s5_question,"స్వరం, స్వరం, డప్పు, స్వరం, స్వరం... తర్వాత ఏది వస్తుంది? సరైన జవాబును తాకు!",DRAFT translation - needs native-speaker review
+ml_ep01_s5_wrong,"దాదాపు! స్వరం, స్వరం, డప్పు. రెండు స్వరాల తర్వాత ఏది వస్తుంది?",DRAFT translation - needs native-speaker review
+ml_ep01_s6_reward,నువ్వు తాళం కనిపెట్టావు! నువ్వు బీట్ ఫైండర్!,DRAFT translation - needs native-speaker review
 generic_fallback,"హ్మ్, ఇంకోటి ప్రయత్నిద్దాం!",DRAFT translation - needs native-speaker review
 generic_too_long,"వావ్, ఎన్ని మాటలో! కొంచెం చిన్నగా చెప్పగలవా?",DRAFT translation - needs native-speaker review
 safety_tell_grownup,"ఇది ముఖ్యమైన విషయంలా అనిపిస్తోంది. నువ్వు నమ్మే పెద్దవాళ్లకు దీని గురించి చెప్పు, సరేనా? వాళ్లు సహాయం చేస్తారు.",SAFETY + DRAFT translation - needs native-speaker review

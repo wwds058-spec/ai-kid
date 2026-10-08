@@ -1,0 +1,77 @@
+{
+  "id": "ml_ep01",
+  "world": "music_lab",
+  "title": {
+    "en": "Aiko Finds the Beat",
+    "hi": "आइको को ताल मिली",
+    "te": "ఐకోకు తాళం దొరికింది"
+  },
+  "premium": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "watch",
+      "audio": "ml_ep01_s1_intro",
+      "emotion": "excited",
+      "scene": "music_lab",
+      "advance": "auto"
+    },
+    {
+      "id": "s2",
+      "type": "play",
+      "audio": "ml_ep01_s2_question",
+      "emotion": "curious",
+      "game": "pattern_tap",
+      "gameConfig": {
+        "items": ["🥁", "👏", "🥁", "👏", "🥁", "❓"],
+        "answer": "👏"
+      },
+      "onWrong": "ml_ep01_s2_wrong",
+      "advance": "correctAnswer"
+    },
+    {
+      "id": "s3",
+      "type": "watch",
+      "audio": "ml_ep01_s3_explain",
+      "emotion": "happy",
+      "scene": "music_lab",
+      "advance": "tap"
+    },
+    {
+      "id": "s4",
+      "type": "speak",
+      "audio": "ml_ep01_s4_prompt",
+      "emotion": "curious",
+      "intents": [
+        { "match": "MUSIC",     "audio": "ml_ep01_s4_r_music" },
+        { "match": "YES",       "audio": "ml_ep01_s4_r_yes" },
+        { "match": "NO",        "audio": "ml_ep01_s4_r_no", "emotion": "normal" },
+        { "match": "DONT_KNOW", "audio": "ml_ep01_s4_r_dontknow" }
+      ],
+      "fallback": "ml_ep01_s4_fallback",
+      "advance": "speech",
+      "timeoutSeconds": 10
+    },
+    {
+      "id": "s5",
+      "type": "play",
+      "audio": "ml_ep01_s5_question",
+      "emotion": "curious",
+      "game": "pattern_tap",
+      "gameConfig": {
+        "items": ["🎵", "🎵", "🥁", "🎵", "🎵", "❓"],
+        "answer": "🥁"
+      },
+      "onWrong": "ml_ep01_s5_wrong",
+      "advance": "correctAnswer"
+    },
+    {
+      "id": "s6",
+      "type": "reward",
+      "audio": "ml_ep01_s6_reward",
+      "emotion": "celebrate",
+      "badge": "beat_finder",
+      "advance": "tap"
+    }
+  ]
+}

@@ -21,6 +21,19 @@ pf_ep02_s5_r_shapes,"आकार! फ़र्श, टाइलों और �
 pf_ep02_s5_r_dontknow,कोई बात नहीं! बाद में अपने फ़र्श या कपड़ों को देखना। शायद कोई पैटर्न मिल जाए!,DRAFT translation - needs native-speaker review
 pf_ep02_s5_fallback,कितना मज़ेदार विचार! पैटर्न हमारे चारों ओर छिपे हैं।,DRAFT translation - needs native-speaker review
 pf_ep02_s6_reward,शानदार! तुमने मुझे उदाहरणों से सीखने में मदद की। तुम डेटा संग्राहक हो!,DRAFT translation - needs native-speaker review
+ml_ep01_s1_intro,"संगीत लैब में स्वागत है! सुनो: ढम, ताली, ढम, ताली! संगीत में भी पैटर्न होते हैं!",DRAFT translation - needs native-speaker review
+ml_ep01_s2_question,"ढोल, ताली, ढोल, ताली, ढोल... आगे क्या आएगा? सही जवाब छुओ!",DRAFT translation - needs native-speaker review
+ml_ep01_s2_wrong,"फिर से सुनो: ढोल, ताली, ढोल, ताली। ढोल के बाद क्या आता है?",DRAFT translation - needs native-speaker review
+ml_ep01_s3_explain,कंप्यूटर बहुत सारे उदाहरण सुनकर ढोल और ताली में फ़र्क करना सीख सकते हैं। यह है AI का सुनना सीखना!,DRAFT translation - needs native-speaker review
+ml_ep01_s4_prompt,क्या तुम्हें गाना या नाचना पसंद है?,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_music,"मुझे भी! जब तुम गाते या नाचते हो, तो अपनी आवाज़ और पैरों से पैटर्न बनाते हो!",DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_yes,वाह! साथ में संगीत और भी मज़ेदार होता है।,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_no,कोई बात नहीं! तुम बस सुन सकते हो। सुनना भी एक सुपरपावर है।,DRAFT translation - needs native-speaker review
+ml_ep01_s4_r_dontknow,"कोई बात नहीं! चलो थोड़ी ताली बजाएँ: ताली, ताली, ताली!",DRAFT translation - needs native-speaker review
+ml_ep01_s4_fallback,मुझे तुम्हारी आवाज़ सुनना अच्छा लगता है! चलो एक और पैटर्न बनाते हैं।,DRAFT translation - needs native-speaker review
+ml_ep01_s5_question,"सुर, सुर, ढोल, सुर, सुर... आगे क्या आएगा? सही जवाब छुओ!",DRAFT translation - needs native-speaker review
+ml_ep01_s5_wrong,"लगभग! सुर, सुर, ढोल। दो सुरों के बाद क्या आता है?",DRAFT translation - needs native-speaker review
+ml_ep01_s6_reward,तुमने ताल ढूँढ ली! तुम ताल खोजी हो!,DRAFT translation - needs native-speaker review
 generic_fallback,"हम्म, चलो कुछ और करके देखते हैं!",DRAFT translation - needs native-speaker review
 generic_too_long,"वाह, कितने सारे शब्द! क्या तुम थोड़ा छोटा करके बोल सकते हो?",DRAFT translation - needs native-speaker review
 safety_tell_grownup,"यह कोई ज़रूरी बात लगती है। कृपया किसी ऐसे बड़े को बताओ जिस पर तुम्हें भरोसा है, ठीक है? वे मदद कर सकते हैं।",SAFETY + DRAFT translation - needs native-speaker review

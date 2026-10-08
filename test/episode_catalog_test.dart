@@ -32,8 +32,12 @@ void main() {
     expect(r({}), 'pf_ep01');
     expect(r({'pf_ep01'}), 'pf_ep02');
     expect(r({'pf_ep01', 'pf_ep02'}), 'pf_ep01');
+    final ml = EpisodeCatalog.world('music_lab')!;
+    expect(EpisodeCatalog.resume(ml, {}, isPremium: false), isNull,
+        reason: 'free users cannot start a premium-only world');
+    expect(EpisodeCatalog.resume(ml, {}, isPremium: true), 'ml_ep01');
     expect(
-        EpisodeCatalog.resume(EpisodeCatalog.world('music_lab')!, {},
+        EpisodeCatalog.resume(EpisodeCatalog.world('gadget_city')!, {},
             isPremium: true),
         isNull);
   });
@@ -50,6 +54,18 @@ void main() {
         'tw_ep03');
     expect(EpisodeCatalog.resume(mixed, {'tw_ep01'}, isPremium: true),
         'tw_ep02');
+  });
+
+  test('shipped catalog: Pattern Forest free, Music Lab premium, Gadget City empty',
+      () {
+    WorldAccess a(String id, bool p) =>
+        EpisodeCatalog.access(EpisodeCatalog.world(id)!, isPremium: p);
+    expect(a('pattern_forest', false), WorldAccess.open);
+    expect(a('music_lab', false), WorldAccess.locked);
+    expect(a('music_lab', true), WorldAccess.open);
+    expect(a('gadget_city', true), WorldAccess.comingSoon);
+    expect(EpisodeCatalog.episode('ml_ep01')!.premium, isTrue);
+    expect(EpisodeCatalog.episode('pf_ep01')!.premium, isFalse);
   });
 
   test('access: open, locked when all premium, coming soon when empty', () {
