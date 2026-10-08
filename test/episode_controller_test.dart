@@ -259,7 +259,7 @@ void main() {
     expect(seen['a3'], 'normal', reason: 'step line uses the step emotion');
   });
 
-  test('reply line shows the intent's emotion', () async {
+  test('reply line shows the emotion of its intent', () async {
     await boot();
     String? replyEmotion;
     audio.onPlay = (id) {
