@@ -1,0 +1,19 @@
+{
+  "_readme": "Filled in by people, not tools. RELEASE=1 flutter test fails until every section has passed: true with who/when/build. See docs/release/README.md.",
+  "billing": {
+    "passed": false,
+    "tester": null,
+    "date": null,
+    "build": null,
+    "revenuecat_project": null,
+    "notes": "Every case in docs/BILLING_TESTING.md on the Play internal testing track with a license-tester account."
+  },
+  "device_qa": {
+    "passed": false,
+    "tester": null,
+    "date": null,
+    "build": null,
+    "devices": [],
+    "notes": "Every section of docs/RELEASE_QA.md; include at least one low-end device and Android 12, 13, 14, 15, 16."
+  }
+}

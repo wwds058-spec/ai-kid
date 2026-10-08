@@ -8,6 +8,26 @@ name and date).
 One episode logic serves every language: episode JSON holds ids, not text;
 each language supplies text keyed by those ids.
 
+## Worksheets (start here)
+
+`docs/review/review_hi.csv` and `docs/review/review_te.csv` list **every**
+item below, one row each, with a stable `id`, the English reference, the
+current text and a `SAFETY` flag. Reviewers fill `reviewer_ok (Y/N)`,
+`correction` and `reviewer_notes`, and send the sheet back; a developer
+applies corrections at the source the `id` names
+(`ui.*`/`reward.*` → `lib/l10n/strings.dart`, `title.*` → episode JSON,
+`audio.*` → `docs/audio_script_{lang}.csv`, `keyword.*` →
+`intent_router.dart`, `safety.*` → `safety_layer.dart`), then regenerates:
+
+```bash
+UPDATE_REVIEW=1 flutter test test/review_sheet_test.dart
+```
+
+CI fails if a sheet is out of date, so reviewers always see current content.
+**Every `SAFETY` row needs a child-safety reviewer as well as a native
+speaker.** Latin-script keywords/phrases appear in both sheets (they may be
+English or romanised Hindi/Telugu); check the ones in your language.
+
 ## What to review, per language
 
 | Item | Where | Reviewer |

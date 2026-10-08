@@ -59,6 +59,36 @@ class AppStrings {
     required this.loadError,
   });
 
+  /// Every string as `id → text`, for the translation review sheet
+  /// (test/review_sheet_test.dart). Keep in step with the fields above.
+  Map<String, String> get reviewEntries => {
+        'ui.greeting': greeting,
+        'ui.tagline': tagline,
+        'ui.letsGo': letsGo,
+        'ui.parentSettings': parentSettings,
+        'ui.chooseWorld': chooseWorld,
+        for (final e in worldNames.entries) 'ui.world.${e.key}': e.value,
+        'ui.premium': premium,
+        'ui.comingSoon': comingSoon,
+        'ui.worldLocked': worldLocked,
+        'ui.ok': ok,
+        'ui.forGrownUps': forGrownUps,
+        'ui.episodeLocked': episodeLocked,
+        'ui.backToWorlds': backToWorlds,
+        'ui.nextAdventure': nextAdventure,
+        'ui.nextNeedsPremium': nextNeedsPremium,
+        'ui.tapToContinue': tapToContinue,
+        'ui.saySomething': saySomething,
+        'ui.greatJob': greatJob,
+        'ui.earnedBadges.1': earnedBadges(1),
+        'ui.earnedBadges.3': earnedBadges(3),
+        for (final e in badges.entries) ...{
+          'reward.${e.key}.name': e.value.name,
+          'reward.${e.key}.description': e.value.description,
+        },
+        'ui.loadError': loadError,
+      };
+
   /// Strings for [lang], falling back to English for unknown codes.
   static AppStrings of(String lang) => all[lang] ?? en;
 

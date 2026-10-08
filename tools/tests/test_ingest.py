@@ -40,7 +40,8 @@ class IngestTest(unittest.TestCase):
 
     def test_valid_delivery_is_normalised_and_recorded_as_studio(self):
         tone(self.src / "pf_ep01_s1_intro.wav", 2.0, lead_silence=0.8)
-        errors, missing = ingest_recordings.ingest("hi", self.src, "Talent A", self.tmp)
+        errors, missing = ingest_recordings.ingest(
+            "hi", self.src, "Studio A", self.tmp, talent="Actor A")
         self.assertEqual(errors, [])
         self.assertEqual(missing, ["pf_ep01_s2_explain"])
         mp3 = self.tmp / "assets" / "audio" / "hi" / "pf_ep01_s1_intro.mp3"
@@ -50,7 +51,8 @@ class IngestTest(unittest.TestCase):
         entry = audio_manifest.load("hi", self.tmp)["pf_ep01_s1_intro"]
         self.assertEqual(entry["source"], "studio")
         self.assertEqual(entry["sha256"], audio_manifest.sha256(mp3))
-        self.assertEqual(entry["detail"], "Talent A")
+        self.assertEqual(entry["detail"], "Studio A")
+        self.assertEqual(entry["talent"], "Actor A")
 
     def test_unknown_id_rejects_whole_delivery(self):
         tone(self.src / "pf_ep01_s1_intro.wav", 1.0)

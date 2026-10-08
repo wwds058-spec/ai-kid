@@ -43,5 +43,18 @@ void main() {
           reason: '${placeholders.length} placeholder lines in $lang: '
               'ingest studio recordings with tools/ingest_recordings.py');
     }, skip: isRelease ? false : 'only enforced when RELEASE=1');
+
+    test('[$lang] one consistent Aiko voice (single talent per language)', () {
+      final talents = {
+        for (final e in manifest.values)
+          if ((e as Map)['source'] == 'studio') e['talent'],
+      };
+      expect(talents.length, lessThanOrEqualTo(1),
+          reason: '$lang mixes voice actors: $talents');
+      if (isRelease) {
+        expect(talents.single, isA<String>(),
+            reason: '$lang studio lines must name their voice actor');
+      }
+    });
   }
 }

@@ -40,5 +40,8 @@ def save(lang, manifest, root=None):
     )
 
 
-def record(manifest, line_id, mp3, source, detail):
-    manifest[line_id] = {"source": source, "sha256": sha256(mp3), "detail": detail}
+def record(manifest, line_id, mp3, source, detail, talent=None):
+    entry = {"source": source, "sha256": sha256(mp3), "detail": detail}
+    if talent:
+        entry["talent"] = talent
+    manifest[line_id] = entry

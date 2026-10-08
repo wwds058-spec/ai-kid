@@ -2,7 +2,7 @@
 """Ingest studio recordings into the app.
 
     python3 tools/ingest_recordings.py --lang hi --src ~/delivery/hi \\
-        --detail "Talent: <name>, session 2026-11-02"
+        --talent "<voice actor>" --detail "Studio X, session 2026-11-02"
 
 For every file in --src named {line_id}.{wav,flac,mp3,m4a,aiff}:
   1. rejects unknown line ids, unreadable files and wrong durations
@@ -67,7 +67,7 @@ def convert(src, dest):
     )
 
 
-def ingest(lang, src, detail, root=None):
+def ingest(lang, src, detail, root=None, talent=None):
     root = root or audio_manifest.ROOT
     known = set(line_ids(root, lang))
     files = sorted(p for p in Path(src).iterdir() if p.suffix.lower() in EXTS)
@@ -101,7 +101,7 @@ def ingest(lang, src, detail, root=None):
         for line_id, mp3 in staged:
             dest = out_dir / f"{line_id}.mp3"
             shutil.copyfile(mp3, dest)
-            audio_manifest.record(manifest, line_id, dest, "studio", detail)
+            audio_manifest.record(manifest, line_id, dest, "studio", detail, talent)
     audio_manifest.save(lang, manifest, root)
     missing = sorted(i for i in known if manifest.get(i, {}).get("source") != "studio")
     return [], missing
@@ -111,12 +111,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--lang", required=True, choices=audio_manifest.LANGS)
     ap.add_argument("--src", required=True, type=Path)
+    ap.add_argument("--talent", required=True,
+                    help="Aiko's voice actor for this language (one per language)")
     ap.add_argument("--detail", required=True,
-                    help="talent / session / studio, kept in the manifest")
+                    help="studio / session, kept in the manifest")
     args = ap.parse_args()
     if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
         sys.exit("needs ffmpeg and ffprobe on PATH")
-    errors, missing = ingest(args.lang, args.src, args.detail)
+    errors, missing = ingest(args.lang, args.src, args.detail, talent=args.talent)
     if errors:
         print("Rejected, nothing written:\n  " + "\n  ".join(errors))
         sys.exit(1)

@@ -46,8 +46,8 @@ never alarmed, and need sign-off from a child-safety reviewer in each language.
 ## Ingest
 
 ```bash
-python3 tools/ingest_recordings.py --lang hi --src ~/delivery/hi \
-    --detail "Talent: <name>, Studio: <studio>, Session: <date>"
+python3 tools/ingest_recordings.py --lang hi --src ~/delivery/hi --talent "<voice actor>" \
+    --detail "Studio: <studio>, Session: <date>"
 ```
 
 Rejects the whole delivery (writes nothing) on unknown ids, unreadable files
