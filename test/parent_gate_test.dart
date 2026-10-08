@@ -89,6 +89,32 @@ void main() {
       expect(location(), Routes.pinGate);
     });
 
+    Future<void> enter(WidgetTester tester, String pin) async {
+      for (final d in pin.split('')) {
+        await tester.tap(find.text(d).last);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('3 wrong PINs lock the gate, and leaving does not reset it',
+        (tester) async {
+      await pump(tester);
+      router.go(Routes.pinGate);
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 3; i++) {
+        await enter(tester, '9999');
+      }
+      expect(find.text('Too many wrong attempts.'), findsOneWidget);
+
+      router.go(Routes.worldMap);
+      await tester.pumpAndSettle();
+      router.go(Routes.pinGate);
+      await tester.pumpAndSettle();
+      expect(find.text('Too many wrong attempts.'), findsOneWidget);
+      expect(find.text('1'), findsNothing, reason: 'keypad hidden while locked');
+    });
+
     testWidgets('wrong PIN stays on the gate', (tester) async {
       await pump(tester);
       router.go(Routes.pinGate);

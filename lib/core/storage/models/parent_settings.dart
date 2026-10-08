@@ -13,6 +13,12 @@ class ParentSettings with _$ParentSettings {
     String? pinHash,
     /// Log of disclosure events (child said something sensitive) — no audio stored
     @Default([]) List<String> disclosureLog,
+    /// Wrong PIN entries since the last success or lockout (see PinLockout)
+    @Default(0) int failedPinAttempts,
+    /// Lockouts since the last correct PIN; each one doubles the cooldown
+    @Default(0) int pinLockouts,
+    /// PIN entry is refused until this time
+    DateTime? pinLockedUntil,
   }) = _ParentSettings;
 
   factory ParentSettings.fromJson(Map<String, dynamic> json) =>

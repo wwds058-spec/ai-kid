@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,14 +7,17 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/security/parent_gate.dart';
+import '../../core/security/pin_lockout.dart';
 import '../../core/security/pin_service.dart';
+import '../../core/storage/models/parent_settings.dart';
 import '../../curriculum/episode_controller.dart';
 
 /// PIN gate that sits in front of [ParentDashboardScreen].
 ///
 /// Behaviour:
 ///  • No PIN set → shows "Create PIN" flow (first-time setup)
-///  • PIN set    → shows keypad to verify; locks after 3 wrong attempts
+///  • PIN set    → shows keypad to verify; after 3 wrong attempts entry is
+///    locked for a cooldown that persists across visits (see [PinLockout])
 class PinGateScreen extends ConsumerStatefulWidget {
   const PinGateScreen({super.key});
 
@@ -24,11 +29,37 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
   String _entry = '';
   String _confirmEntry = '';      // used during set-PIN flow
   bool _isConfirmStep = false;    // set-PIN step 2
-  int _wrongAttempts = 0;
-  bool _locked = false;
+  Timer? _unlockTimer;
 
-  static const int _kMaxAttempts = 3;
   static const int _kPinLength = 4;
+
+  ParentSettings get _settings =>
+      ref.read(hiveStorageServiceProvider).getSettings();
+
+  bool get _locked => PinLockout.isLocked(_settings, DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleUnlock();
+  }
+
+  @override
+  void dispose() {
+    _unlockTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Rebuild when the cooldown ends so the keypad comes back by itself.
+  void _scheduleUnlock() {
+    _unlockTimer?.cancel();
+    final wait = PinLockout.remaining(_settings, DateTime.now());
+    if (wait > Duration.zero) {
+      _unlockTimer = Timer(wait, () {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   bool get _hasPinSet {
     final settings = ref.read(hiveStorageServiceProvider).getSettings();
@@ -97,17 +128,17 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
   }
 
   void _verify() {
-    final settings = ref.read(hiveStorageServiceProvider).getSettings();
+    final storage = ref.read(hiveStorageServiceProvider);
+    final settings = storage.getSettings();
     final correct = PinService.verify(_entry, settings.pinHash ?? '');
     if (correct) {
+      storage.saveSettings(PinLockout.recordSuccess(settings));
       ref.read(parentGateProvider).unlock();
       context.go(Routes.parentDashboard);
     } else {
-      setState(() {
-        _wrongAttempts++;
-        _entry = '';
-        if (_wrongAttempts >= _kMaxAttempts) _locked = true;
-      });
+      storage.saveSettings(PinLockout.recordFailure(settings, DateTime.now()));
+      setState(() => _entry = '');
+      _scheduleUnlock();
     }
   }
 
@@ -140,7 +171,8 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
               _buildDots(),
               const SizedBox(height: 40),
               if (_locked)
-                const _LockedMessage()
+                _LockedMessage(
+                    PinLockout.remaining(_settings, DateTime.now()))
               else
                 _buildKeypad(),
             ],
@@ -165,13 +197,14 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
         textAlign: TextAlign.center,
       );
     }
-    final remaining = _kMaxAttempts - _wrongAttempts;
+    final settings = _settings;
+    final remaining = PinLockout.attemptsLeft(settings);
     return Column(
       children: [
         const Text('Enter parent PIN',
             style: TextStyle(color: Colors.white, fontSize: 22,
                 fontWeight: FontWeight.w700)),
-        if (_wrongAttempts > 0)
+        if (settings.failedPinAttempts > 0)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -259,15 +292,17 @@ class _KeyButton extends StatelessWidget {
 }
 
 class _LockedMessage extends StatelessWidget {
-  const _LockedMessage();
+  final Duration remaining;
+  const _LockedMessage(this.remaining);
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         const Text('🔒', style: TextStyle(fontSize: 64)),
         const SizedBox(height: 16),
-        const Text(
-          'Close and reopen the app to try again.',
+        Text(
+          'Try again in ${remaining.inMinutes + 1} '
+          'minute${remaining.inMinutes == 0 ? '' : 's'}.',
           style: TextStyle(color: Colors.white54, fontSize: 16),
           textAlign: TextAlign.center,
         ),
