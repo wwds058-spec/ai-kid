@@ -33,7 +33,7 @@
       "id": "s3",
       "type": "watch",
       "audio": "ml_ep01_s3_explain",
-      "emotion": "happy",
+      "emotion": "excited",
       "scene": "music_lab",
       "advance": "tap"
     },
@@ -45,7 +45,7 @@
       "intents": [
         { "match": "MUSIC",     "audio": "ml_ep01_s4_r_music" },
         { "match": "YES",       "audio": "ml_ep01_s4_r_yes" },
-        { "match": "NO",        "audio": "ml_ep01_s4_r_no", "emotion": "normal" },
+        { "match": "NO",        "audio": "ml_ep01_s4_r_no", "emotion": "idle" },
         { "match": "DONT_KNOW", "audio": "ml_ep01_s4_r_dontknow" }
       ],
       "fallback": "ml_ep01_s4_fallback",

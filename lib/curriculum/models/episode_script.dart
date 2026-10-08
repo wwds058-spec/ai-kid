@@ -17,7 +17,7 @@ class IntentResponse with _$IntentResponse {
     required String match,  // e.g. 'WHAT_IS_PATTERN'
     required String audio,  // audio line id
     /// Aiko's emotion while the reply plays (one of AikoWidget.emotionIndex)
-    @Default('happy') String emotion,
+    @Default('excited') String emotion,
   }) = _IntentResponse;
 
   factory IntentResponse.fromJson(Map<String, dynamic> json) =>
@@ -46,7 +46,7 @@ class EpisodeStep with _$EpisodeStep {
     required String id,
     required StepType type,
     required String audio,         // base audio line id (localised by AudioService)
-    @Default('normal') String emotion,   // Rive state machine input
+    @Default('idle') String emotion,   // Aiko pose; see AikoWidget.emotionIndex
     String? scene,                 // background scene key
     required AdvanceMode advance,
     // PLAY

@@ -14,6 +14,8 @@ import 'package:ai_explorer/features/onboarding/onboarding_screen.dart';
 import 'package:ai_explorer/features/reward/reward_screen.dart';
 import 'package:ai_explorer/features/world_map/world_map_screen.dart';
 import 'package:ai_explorer/l10n/strings.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,6 +58,13 @@ void main() {
         // which never complete in this one; start each test clean.
         rootBundle.clear();
         AikoWidget.resetRiveCache();
+        // Collect every framework error. The only one allowed is the loud
+        // "aiko.riv missing" report (character not delivered yet); any
+        // overflow or other error fails the test.
+        final errors = <FlutterErrorDetails>[];
+        final previous = FlutterError.onError;
+        FlutterError.onError = errors.add;
+        addTearDown(() => FlutterError.onError = previous);
         tester.view.physicalSize = const Size(360, 640);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -76,7 +85,15 @@ void main() {
           child: MaterialApp(home: screen),
         ));
         await tester.pumpAndSettle();
+        FlutterError.onError = previous;
         expect(tester.takeException(), isNull);
+        final unexpected = errors
+            .where((e) =>
+                !(e.library == 'aiko_widget' &&
+                    '${e.context}'.contains('emoji fallback') &&
+                    !File(AikoWidget.kAsset).existsSync()))
+            .map((e) => e.exceptionAsString());
+        expect(unexpected, isEmpty);
         if (name.startsWith('PIN')) {
           // Stop the gate's 15 s lock-check timer before the test ends.
           await tester.pumpWidget(const SizedBox());

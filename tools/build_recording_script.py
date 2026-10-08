@@ -16,12 +16,11 @@ LANGS = ["en", "hi", "te"]
 
 # One direction per animation emotion (see AikoWidget.emotionIndex).
 DIRECTION = {
-    "normal": "Warm, calm, friendly. Conversational pace.",
-    "happy": "Bright smile in the voice. Praise that feels earned, not shouted.",
-    "excited": "High energy, wide pitch range, a little faster. Wonder, not screaming.",
-    "curious": "Wondering, slightly slower, rising intonation on questions. Never confused-sad.",
+    "idle": "Warm, calm, friendly. Conversational pace.",
+    "excited": "Bright, high energy, wide pitch range, a little faster. Wonder and praise, never shouting.",
+    "curious": "Wondering, slightly slower, rising intonation on questions.",
     "celebrate": "Biggest energy of the episode. Cheerful, proud of the child.",
-    "sad": "Gentle, soft and brief. Comforting, never upsetting.",
+    "oops": "Playful 'oops!' — light and encouraging, never disappointed or scolding.",
 }
 
 

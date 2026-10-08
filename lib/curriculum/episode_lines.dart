@@ -21,18 +21,18 @@ class EpisodeLine {
   const EpisodeLine(this.id, this.emotion, this.kind, [this.stepId]);
 }
 
-/// Encouraging, never negative, after a wrong game answer.
-const kWrongAnswerEmotion = 'curious';
+/// "Oops!" after a wrong game answer: playful, never a scolding.
+const kWrongAnswerEmotion = 'oops';
 
 /// Calm when Aiko didn't understand or the child stayed silent.
-const kFallbackEmotion = 'normal';
+const kFallbackEmotion = 'idle';
 
 /// Lines the engine plays regardless of episode content.
 const kSharedLines = <EpisodeLine>[
-  EpisodeLine('generic_fallback', 'normal', LineKind.shared),
-  EpisodeLine('generic_too_long', 'normal', LineKind.shared),
+  EpisodeLine('generic_fallback', 'idle', LineKind.shared),
+  EpisodeLine('generic_too_long', 'idle', LineKind.shared),
   // Calm and warm — never alarmed — when a child may be disclosing harm.
-  EpisodeLine('safety_tell_grownup', 'normal', LineKind.shared),
+  EpisodeLine('safety_tell_grownup', 'idle', LineKind.shared),
 ];
 
 List<EpisodeLine> linesOf(EpisodeScript script) => [

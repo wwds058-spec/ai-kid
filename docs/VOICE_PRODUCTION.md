@@ -26,10 +26,11 @@ line in every language is a studio recording.
 | `english_reference` | the English line, so meaning matches across languages |
 | `text` | what to read |
 
-Emotions are the six animation states (`normal`, `happy`, `excited`,
-`curious`, `celebrate`, `sad`). Each line's emotion comes from the episode
-JSON (step emotion; replies default `happy`; wrong-answer `curious`;
-fallbacks `normal`) and `test/audio_emotion_test.dart` keeps the script equal
+Emotions are Aiko's five animation poses (`idle`, `excited`, `curious`,
+`celebrate`, `oops`); her sixth state, `talking`, is on for every line while
+it plays. Each line's emotion comes from the episode JSON (step emotion;
+replies default `excited`; wrong-answer `oops`; fallbacks and shared lines
+`idle`) and `test/audio_emotion_test.dart` keeps the script equal
 to what the app animates.
 
 Rows marked **SAFETY** (`safety_tell_grownup`) are read calmly and warmly,

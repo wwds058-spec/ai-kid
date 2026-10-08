@@ -21,6 +21,8 @@ class EpisodeState with _$EpisodeState {
     /// Emotion of a reply/feedback line currently playing; null means the
     /// step's own emotion. Cleared when the next step starts.
     String? lineEmotion,
+    /// True exactly while a line is playing; drives Aiko's talking state.
+    @Default(false) bool speaking,
   }) = EpisodeRunning;
 
   // ── Complete ─────────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ class EpisodeState with _$EpisodeState {
 
 extension EpisodeStateX on EpisodeState {
   EpisodeStep? get currentStep => maybeWhen(
-        running: (script, stepIndex, _, __, ___, ____, _____) =>
+        running: (script, stepIndex, _, __, ___, ____, _____, ______) =>
             script.steps[stepIndex],
         orElse: () => null,
       );

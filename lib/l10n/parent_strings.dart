@@ -28,6 +28,10 @@ class ParentStrings {
   final String language;
   final String voice;
   final String voiceHelp;
+  final String dailyLimit;
+  final String Function(int minutes) minutes;
+  final String aiInteraction;
+  final String aiInteractionHelp;
   final String upgrade;
   final String renew;
   final String restore;
@@ -74,6 +78,10 @@ class ParentStrings {
     required this.language,
     required this.voice,
     required this.voiceHelp,
+    required this.dailyLimit,
+    required this.minutes,
+    required this.aiInteraction,
+    required this.aiInteractionHelp,
     required this.upgrade,
     required this.renew,
     required this.restore,
@@ -125,6 +133,10 @@ class ParentStrings {
     voice: 'Voice answers',
     voiceHelp: 'When off, the microphone is never used and Aiko continues '
         'without waiting for an answer.',
+    dailyLimit: 'Daily play limit',
+    minutes: _minutes,
+    aiInteraction: 'AI interaction',
+    aiInteractionHelp: 'Allow interactive AI features.',
     upgrade: 'Upgrade to Premium',
     renew: 'Renew Premium',
     restore: 'Restore Purchases',
@@ -159,5 +171,6 @@ class ParentStrings {
 
 String _expires(String d) => 'Renews or expires on $d';
 String _premiumUntil(String d) => 'Premium until $d';
+String _minutes(int m) => '$m minutes';
 String _wrongPin(int n) => 'Wrong PIN. $n attempt${n == 1 ? '' : 's'} left.';
 String _tryAgainIn(int m) => 'Try again in $m minute${m == 1 ? '' : 's'}.';

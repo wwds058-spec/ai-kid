@@ -1,3 +1,4 @@
+import 'package:ai_explorer/core/feature_flags.dart';
 import 'package:ai_explorer/core/purchases/purchase_service.dart';
 import 'package:ai_explorer/core/purchases/store_client.dart';
 import 'package:ai_explorer/core/purchases/subscription_provider.dart';
@@ -154,10 +155,51 @@ void main() {
     expect(storage.settings.voiceEnabled, isFalse);
   });
 
-  testWidgets('no dead controls: AI toggle and daily limit are gone',
-      (tester) async {
-    await pump(tester);
-    expect(find.textContaining('AI interaction'), findsNothing);
-    expect(find.textContaining('Daily limit'), findsNothing);
+  group('feature-gated parent controls', () {
+    test('build defaults: both gated off (zero generative AI in this MVP)', () {
+      expect(FeatureFlags.build.aiInteraction, isFalse);
+      expect(const FeatureFlags().dailyLimit, isFalse);
+    });
+
+    testWidgets('hidden by default', (tester) async {
+      await pump(tester);
+      expect(find.text(p.dailyLimit), findsNothing);
+      expect(find.text(p.aiInteraction), findsNothing);
+    });
+
+    testWidgets('when enabled, both render and save to the existing model',
+        (tester) async {
+      tester.view.physicalSize = const Size(420, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final s = FakeStorage();
+      container = ProviderContainer(overrides: [
+        hiveStorageServiceProvider.overrideWithValue(s),
+        storeClientProvider.overrideWithValue(FakeStore()),
+        featureFlagsProvider.overrideWithValue(
+            const FeatureFlags(dailyLimit: true, aiInteraction: true)),
+      ]);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: ParentDashboardScreen())));
+
+      await tester.tap(find.byKey(const ValueKey('daily_limit_dropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(p.minutes(45)).last);
+      await tester.pumpAndSettle();
+      expect(s.settings.dailyLimitMinutes, 45);
+
+      await tester.tap(find.byKey(const ValueKey('ai_interaction_switch')));
+      await tester.pumpAndSettle();
+      expect(s.settings.aiInteractionEnabled, isFalse);
+    });
+
+    test('model fields are kept and round-trip through storage JSON', () {
+      const s = ParentSettings(dailyLimitMinutes: 20, aiInteractionEnabled: false);
+      final back = ParentSettings.fromJson(s.toJson());
+      expect(back.dailyLimitMinutes, 20);
+      expect(back.aiInteractionEnabled, isFalse);
+    });
   });
 }

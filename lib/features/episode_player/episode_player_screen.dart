@@ -67,10 +67,10 @@ class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen>
         child: state.when(
           loading: () => const _LoadingView(),
           running: (script, stepIndex, awaitingSpeech, awaitingTap,
-              awaitingAnswer, lang, lineEmotion) {
+              awaitingAnswer, lang, lineEmotion, speaking) {
             final step = script.steps[stepIndex];
-            // isTalking = not awaiting any interaction (audio is playing)
-            final isTalking = !awaitingTap && !awaitingAnswer && !awaitingSpeech;
+            // Talking state follows actual audio playback
+            final isTalking = speaking;
             return _RunningView(
               step: step,
               title: script.title[lang] ?? script.title['en'] ?? '',

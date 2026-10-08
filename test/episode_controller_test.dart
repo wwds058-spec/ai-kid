@@ -263,9 +263,9 @@ void main() {
     await ctrl().handleAnswer('red'); // wrong
     await ctrl().handleAnswer('blue');
     await ctrl().handleSpeech('banana'); // unrecognised → fallback
-    expect(seen['wrong'], 'curious');
-    expect(seen['fb'], 'normal');
-    expect(seen['a3'], 'normal', reason: 'step line uses the step emotion');
+    expect(seen['wrong'], 'oops');
+    expect(seen['fb'], 'idle');
+    expect(seen['a3'], 'idle', reason: 'step line uses the step emotion');
   });
 
   test('reply line shows the emotion of its intent', () async {
@@ -276,7 +276,7 @@ void main() {
     };
     await reachSpeakStep();
     await ctrl().handleSpeech('yes');
-    expect(replyEmotion, 'happy');
+    expect(replyEmotion, 'excited');
   });
 
   test('voice answers off: speaking step is skipped and the mic never opens',
@@ -388,5 +388,16 @@ void main() {
       await ctrl().handleSpeech('no');
       expect(audio.played.length, n);
     });
+  });
+
+  test('talking state is on exactly while a line plays', () async {
+    await boot();
+    final duringPlay = <bool>[];
+    audio.onPlay = (_) => duringPlay.add((st() as EpisodeRunning).speaking);
+    await ctrl().handleTap();
+    expect(duringPlay, everyElement(isTrue));
+    expect(duringPlay, isNotEmpty);
+    expect((st() as EpisodeRunning).speaking, isFalse,
+        reason: 'waiting for the child, not talking');
   });
 }

@@ -164,7 +164,7 @@ class EpisodeController extends _$EpisodeController {
         lineEmotion: null);
 
     // Play the step's audio
-    await ref.read(audioServiceProvider).play(step.audio, lang: s.lang);
+    await _play(step.audio);
 
     // Wait for audio to finish before advancing (for AUTO)
     // For other advance modes, set the awaiting flag
@@ -245,7 +245,20 @@ class EpisodeController extends _$EpisodeController {
     final s = _runningOrNull();
     if (s == null) return;
     state = s.copyWith(lineEmotion: emotionOfLine(s.script, lineId));
-    await ref.read(audioServiceProvider).play(lineId, lang: s.lang);
+    await _play(lineId);
+  }
+
+  /// Play one line with Aiko in her talking state for exactly its duration.
+  Future<void> _play(String lineId) async {
+    final s = _runningOrNull();
+    if (s == null) return;
+    state = s.copyWith(speaking: true);
+    try {
+      await ref.read(audioServiceProvider).play(lineId, lang: s.lang);
+    } finally {
+      final after = _runningOrNull();
+      if (after != null) state = after.copyWith(speaking: false);
+    }
   }
 
   void _startSpeechTimeout() {

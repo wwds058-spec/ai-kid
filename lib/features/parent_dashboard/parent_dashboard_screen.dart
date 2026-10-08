@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../core/feature_flags.dart';
 import '../../core/purchases/purchase_service.dart';
 import '../../core/purchases/subscription_provider.dart';
 import '../../core/security/parent_gate.dart';
@@ -70,6 +71,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final lang = ref.watch(languageProvider);
     final now = DateTime.now();
     final storeReady = ref.read(purchaseServiceProvider).isConfigured;
+    final flags = ref.watch(featureFlagsProvider);
     final inGrace = sub.isActiveWithGrace &&
         sub.expiresAt != null &&
         now.isAfter(sub.expiresAt!);
@@ -121,7 +123,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(p.language, style: const TextStyle(fontSize: 15)),
+              Flexible(child: Text(p.language, style: const TextStyle(fontSize: 15))),
               DropdownButton<String>(
                 key: const ValueKey('language_dropdown'),
                 value: lang,
@@ -148,6 +150,40 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               setState(() {});
             },
           ),
+          // Feature-gated: model + storage exist, behaviour not shipped yet.
+          if (flags.dailyLimit)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(child: Text(p.dailyLimit, style: const TextStyle(fontSize: 15))),
+                DropdownButton<int>(
+                  key: const ValueKey('daily_limit_dropdown'),
+                  value: settings.dailyLimitMinutes,
+                  items: [
+                    for (final m in {15, 30, 45, 60, settings.dailyLimitMinutes})
+                      DropdownMenuItem(value: m, child: Text(p.minutes(m))),
+                  ],
+                  onChanged: (m) async {
+                    if (m == null) return;
+                    await storage.saveSettings(settings.copyWith(dailyLimitMinutes: m));
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+          if (flags.aiInteraction)
+            SwitchListTile(
+              key: const ValueKey('ai_interaction_switch'),
+              title: Text(p.aiInteraction),
+              subtitle: Text(p.aiInteractionHelp),
+              value: settings.aiInteractionEnabled,
+              activeColor: AIExplorerTheme.purple,
+              contentPadding: EdgeInsets.zero,
+              onChanged: (v) async {
+                await storage.saveSettings(settings.copyWith(aiInteractionEnabled: v));
+                setState(() {});
+              },
+            ),
 
           const SizedBox(height: 32),
           if (offerPurchase)

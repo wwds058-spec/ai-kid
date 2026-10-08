@@ -41,7 +41,7 @@
       "id": "s4",
       "type": "speak",
       "audio": "pf_ep01_s4_prompt",
-      "emotion": "normal",
+      "emotion": "idle",
       "intents": [
         { "match": "WHAT_IS_PATTERN", "audio": "pf_ep01_s4_r_pattern" },
         { "match": "DONT_KNOW",       "audio": "pf_ep01_s4_r_dontknow" },
@@ -55,7 +55,7 @@
       "id": "s5",
       "type": "watch",
       "audio": "pf_ep01_s5_explain",
-      "emotion": "happy",
+      "emotion": "excited",
       "scene": "forest_pattern",
       "advance": "tap"
     },

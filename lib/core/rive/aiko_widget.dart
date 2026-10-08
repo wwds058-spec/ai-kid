@@ -17,17 +17,29 @@ import 'package:rive/rive.dart';
 /// [ ] Confirm input names match kEmotionInput / kTalkingInput below
 /// ───────────────────────────────────────────────────────────────────────────
 class AikoWidget extends StatefulWidget {
-  /// Episode `emotion` values. Rive doesn't support string inputs, so each
-  /// maps to the numeric 'emotion' input; indices must match the state
-  /// machine. Episodes may only use these keys (checked by content tests).
+  /// Aiko's six states: five poses selected by the state machine's
+  /// `emotion` Number input, plus `talking`, driven by the `isTalking`
+  /// Boolean input while a line is actually playing (it layers the mouth /
+  /// gesture animation over the current pose).
+  ///
+  /// Pose indices must match the Rive state machine ([kStateMachine]).
+  /// Episodes may only use these pose names (checked by content tests).
+  /// Spec for the animator: docs/AIKO_CHARACTER.md.
   static const emotionIndex = <String, double>{
-    'normal':    0,
-    'happy':     1,
-    'excited':   2,
-    'curious':   3,
-    'celebrate': 4,
-    'sad':       5,
+    'idle':      0,
+    'excited':   1,
+    'curious':   2,
+    'celebrate': 3,
+    'oops':      4,
   };
+
+  /// All six states, for documentation and contract checks.
+  static const states = ['idle', 'talking', 'excited', 'curious', 'celebrate', 'oops'];
+
+  static const kAsset = 'assets/rive/aiko.riv';
+  static const kStateMachine = 'Aiko_Controller';
+  static const kEmotionInput = 'emotion';
+  static const kTalkingInput = 'isTalking';
 
   /// The character file, loaded once per app run. Null if it is missing or
   /// unreadable: Aiko then shows as the emoji fallback instead of throwing.
@@ -38,9 +50,17 @@ class AikoWidget extends StatefulWidget {
   static void resetRiveCache() => _riveFile = null;
   static Future<RiveFile?> loadRiveFile() => _riveFile ??= () async {
         try {
-          return await RiveFile.asset('assets/rive/aiko.riv');
-        } catch (e) {
-          debugPrint('[AikoWidget] Rive file unavailable, using fallback: $e');
+          return await RiveFile.asset(AikoWidget.kAsset);
+        } catch (e, st) {
+          // Only path to the emoji fallback in a release build. Reported as
+          // an error (logcat / any attached crash reporter), not swallowed.
+          FlutterError.reportError(FlutterErrorDetails(
+            exception: e,
+            stack: st,
+            library: 'aiko_widget',
+            context: ErrorDescription(
+                'loading ${AikoWidget.kAsset}; showing emoji fallback'),
+          ));
           return null;
         }
       }();
@@ -62,9 +82,9 @@ class AikoWidget extends StatefulWidget {
 }
 
 class _AikoWidgetState extends State<AikoWidget> {
-  static const String kStateMachine = 'Aiko_Controller';
-  static const String kEmotionInput = 'emotion';
-  static const String kTalkingInput = 'isTalking';
+  static const kStateMachine = AikoWidget.kStateMachine;
+  static const kEmotionInput = AikoWidget.kEmotionInput;
+  static const kTalkingInput = AikoWidget.kTalkingInput;
 
   StateMachineController? _controller;
   SMIInput<bool>? _talkingInput;
@@ -73,15 +93,29 @@ class _AikoWidgetState extends State<AikoWidget> {
 
   void _onRiveInit(Artboard artboard) {
     final ctrl = StateMachineController.fromArtboard(artboard, kStateMachine);
-    if (ctrl == null) return;
+    if (ctrl == null) {
+      _reportContract('state machine "$kStateMachine" not found');
+      return;
+    }
     artboard.addController(ctrl);
     _controller = ctrl;
 
     _emotionInput = ctrl.findInput<double>(kEmotionInput);
     _talkingInput = ctrl.findInput<bool>(kTalkingInput);
+    if (_emotionInput == null) _reportContract('Number input "$kEmotionInput" missing');
+    if (_talkingInput == null) _reportContract('Boolean input "$kTalkingInput" missing');
 
     _applyEmotion(widget.emotion);
     _applyTalking(widget.isTalking);
+  }
+
+  /// A broken character file must be loud, not a silently frozen Aiko.
+  static void _reportContract(String problem) {
+    FlutterError.reportError(FlutterErrorDetails(
+      exception: StateError('${AikoWidget.kAsset}: $problem'),
+      library: 'aiko_widget',
+      context: ErrorDescription('Aiko Rive contract (docs/AIKO_CHARACTER.md)'),
+    ));
   }
 
   void _applyEmotion(String emotion) {
@@ -135,8 +169,8 @@ class _AikoFallback extends StatelessWidget {
   const _AikoFallback({required this.emotion});
 
   static const _emoji = {
-    'excited': '🤩', 'curious': '🤔', 'happy': '😄',
-    'celebrate': '🎉', 'normal': '🙂', 'sad': '😟',
+    'excited': '🤩', 'curious': '🤔', 'idle': '🙂',
+    'celebrate': '🎉', 'oops': '🙈',
   };
 
   @override
