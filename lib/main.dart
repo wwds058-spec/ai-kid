@@ -18,7 +18,9 @@ const _kRevenueCatKey = String.fromEnvironment('REVENUECAT_ANDROID_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait — children's apps don't need landscape
+  // Portrait on phones. Android 16 (targetSdk 36) ignores orientation locks on
+  // large screens (>= 600dp), so every screen must also lay out in landscape
+  // (covered by test/l10n_layout_test.dart's tablet sizes).
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);

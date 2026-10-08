@@ -318,5 +318,5 @@ class EpisodeController extends _$EpisodeController {
 // ── Storage provider ─────────────────────────────────────────────────────────
 
 @riverpod
-HiveStorageService hiveStorageService(HiveStorageServiceRef ref) =>
+HiveStorageService hiveStorageService(Ref ref) =>
     HiveStorageService();

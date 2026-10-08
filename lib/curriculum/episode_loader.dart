@@ -25,4 +25,4 @@ class EpisodeLoader {
 }
 
 @riverpod
-EpisodeLoader episodeLoader(EpisodeLoaderRef ref) => EpisodeLoader();
+EpisodeLoader episodeLoader(Ref ref) => EpisodeLoader();

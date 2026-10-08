@@ -98,4 +98,4 @@ class DisclosureSpeech extends SafetyResult {
 }
 
 @riverpod
-SafetyLayer safetyLayer(SafetyLayerRef ref) => SafetyLayer();
+SafetyLayer safetyLayer(Ref ref) => SafetyLayer();

@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "com.yasin.ai_explorer"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned (not inherited from the Flutter default) so a toolchain change can't
+    // silently move them. Google Play requires targetSdk >= 36 for new apps and
+    // updates since 2026-08-31; test/release_signoff_test.dart enforces it.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,7 +23,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`

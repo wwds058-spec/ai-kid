@@ -4,7 +4,7 @@ part 'child_profile.freezed.dart';
 part 'child_profile.g.dart';
 
 @freezed
-class ChildProfile with _$ChildProfile {
+abstract class ChildProfile with _$ChildProfile {
   const factory ChildProfile({
     required String id,
     required String nickname,

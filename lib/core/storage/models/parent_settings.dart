@@ -4,7 +4,7 @@ part 'parent_settings.freezed.dart';
 part 'parent_settings.g.dart';
 
 @freezed
-class ParentSettings with _$ParentSettings {
+abstract class ParentSettings with _$ParentSettings {
   const factory ParentSettings({
     @Default(30) int dailyLimitMinutes,
     @Default(true) bool voiceEnabled,

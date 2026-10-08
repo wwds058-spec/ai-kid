@@ -5,17 +5,18 @@ on:
     branches: [main, 'claude/**']
   pull_request:
 
+env:
+  FLUTTER_VERSION: '3.47.6'
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # 3.27.x is required: newer SDKs (Dart 3.13+) crash the pinned
-      # analyzer / riverpod_generator during build_runner.
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -34,3 +35,45 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
           python3 -m unittest discover tools/tests -v
+
+  # Compiles the real Android app (the dev container can't reach the Android
+  # SDK hosts) and proves the shipped artifact targets API 36.
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build release app bundle (debug-signed; no store key in CI)
+        run: flutter build appbundle --release
+
+      - name: Verify the built APK targets API 36
+        run: |
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          "$AAPT2" dump badging build/app/outputs/flutter-apk/app-debug.apk | tee badging.txt | grep -E "sdkVersion|targetSdkVersion|compileSdkVersion"
+          grep -q "targetSdkVersion:'36'" badging.txt
+          grep -q "compileSdkVersion='36'" badging.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-explorer-android
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7

@@ -6,7 +6,7 @@ part 'episode_state.freezed.dart';
 /// The runtime state of the EpisodeController.
 /// UI rebuilds only when this changes.
 @freezed
-class EpisodeState with _$EpisodeState {
+sealed class EpisodeState with _$EpisodeState {
   // ── Loading ──────────────────────────────────────────────────────────────
   const factory EpisodeState.loading() = EpisodeLoading;
 

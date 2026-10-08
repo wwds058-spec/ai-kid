@@ -114,4 +114,4 @@ class IntentRouter {
 }
 
 @riverpod
-IntentRouter intentRouter(IntentRouterRef ref) => IntentRouter();
+IntentRouter intentRouter(Ref ref) => IntentRouter();

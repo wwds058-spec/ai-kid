@@ -4,7 +4,7 @@ part 'episode_progress.freezed.dart';
 part 'episode_progress.g.dart';
 
 @freezed
-class EpisodeProgress with _$EpisodeProgress {
+abstract class EpisodeProgress with _$EpisodeProgress {
   const factory EpisodeProgress({
     required String episodeId,
     @Default(false) bool completed,

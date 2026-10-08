@@ -87,8 +87,10 @@ class AudioService {
   }
 }
 
-@riverpod
-AudioService audioService(AudioServiceRef ref) {
+// Lives for the whole app: it owns long-lived state (router / player /
+// recogniser) and is only read, not watched, by its users.
+@Riverpod(keepAlive: true)
+AudioService audioService(Ref ref) {
   final service = AudioService();
   ref.onDispose(service.dispose);
   return service;

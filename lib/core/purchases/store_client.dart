@@ -63,7 +63,8 @@ class RevenueCatStoreClient implements StoreClient {
           throw const StoreException(
               StoreErrorKind.unavailable, 'no current annual package');
         }
-        return _snapshot(await Purchases.purchasePackage(package));
+        return _snapshot(
+            (await Purchases.purchase(PurchaseParams.package(package))).customerInfo);
       });
 
   @override

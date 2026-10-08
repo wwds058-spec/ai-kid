@@ -12,7 +12,7 @@ enum AdvanceMode { auto, tap, correctAnswer, speech }
 // ─── Intent match inside a SPEAK step ────────────────────────────────────────
 
 @freezed
-class IntentResponse with _$IntentResponse {
+abstract class IntentResponse with _$IntentResponse {
   const factory IntentResponse({
     required String match,  // e.g. 'WHAT_IS_PATTERN'
     required String audio,  // audio line id
@@ -27,7 +27,7 @@ class IntentResponse with _$IntentResponse {
 // ─── Game config for PLAY steps ──────────────────────────────────────────────
 
 @freezed
-class GameConfig with _$GameConfig {
+abstract class GameConfig with _$GameConfig {
   const factory GameConfig({
     @Default([]) List<String> items,
     String? answer,
@@ -41,7 +41,7 @@ class GameConfig with _$GameConfig {
 // ─── Single step ─────────────────────────────────────────────────────────────
 
 @freezed
-class EpisodeStep with _$EpisodeStep {
+abstract class EpisodeStep with _$EpisodeStep {
   const factory EpisodeStep({
     required String id,
     required StepType type,
@@ -68,7 +68,7 @@ class EpisodeStep with _$EpisodeStep {
 // ─── Full episode script ──────────────────────────────────────────────────────
 
 @freezed
-class EpisodeScript with _$EpisodeScript {
+abstract class EpisodeScript with _$EpisodeScript {
   const factory EpisodeScript({
     required String id,
     required String world,

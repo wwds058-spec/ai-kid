@@ -1,8 +1,8 @@
 # AI Explorer — Setup
 
-> **Toolchain:** use Flutter **3.27.x** (Dart 3.6). Newer SDKs (Dart 3.13+) crash the pinned `analyzer`/`riverpod_generator`.
+> **Toolchain:** Flutter **3.47.6** (Dart 3.13), Android Gradle Plugin 9.1, Gradle 9.3.1, Kotlin 2.4, JDK 17+. App targets and compiles against Android 16 (API 36), minSdk 24.
 > Models are persisted to Hive as JSON strings (no Hive adapters / hive_generator).
-> Steps 1–3 (flutter create + manifest permissions) are still required; `android/` is not committed.
+> `android/` is committed (manifest permissions included); skip steps 1–3.
 
 ## 1. Create the Flutter project (run once)
 

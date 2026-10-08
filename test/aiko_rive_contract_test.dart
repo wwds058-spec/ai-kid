@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:ai_explorer/core/rive/aiko_widget.dart';

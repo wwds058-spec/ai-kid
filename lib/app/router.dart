@@ -27,8 +27,10 @@ abstract class Routes {
   static String rewardPath(String id)   => '/reward/$id';
 }
 
-@riverpod
-GoRouter appRouter(AppRouterRef ref) {
+// Lives for the whole app: it owns long-lived state (router / player /
+// recogniser) and is only read, not watched, by its users.
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: Routes.onboarding,
     debugLogDiagnostics: true,

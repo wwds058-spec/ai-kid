@@ -51,9 +51,17 @@ void main() {
     'parent dashboard': const ParentDashboardScreen(),
   };
 
+  // 360x640 phone, plus tablets in both orientations: Android 16 ignores the
+  // portrait lock on large screens for apps targeting API 36.
+  const sizes = {
+    '360x640 phone': Size(360, 640),
+    '1280x800 tablet (landscape)': Size(1280, 800),
+    '800x1280 tablet (portrait)': Size(800, 1280),
+  };
+  for (final MapEntry(key: sizeName, value: size) in sizes.entries)
   for (final lang in kLanguages) {
     for (final MapEntry(key: name, value: screen) in screens.entries) {
-      testWidgets('[$lang] $name fits a 360x640 phone', (tester) async {
+      testWidgets('[$lang] $name fits a $sizeName', (tester) async {
         // rootBundle caches loads as futures from the previous test's zone,
         // which never complete in this one; start each test clean.
         rootBundle.clear();
@@ -65,7 +73,7 @@ void main() {
         final previous = FlutterError.onError;
         FlutterError.onError = errors.add;
         addTearDown(() => FlutterError.onError = previous);
-        tester.view.physicalSize = const Size(360, 640);
+        tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
         await tester.pumpWidget(ProviderScope(

@@ -46,14 +46,14 @@ void main() {
 
   test('targets the API level Google Play requires for new apps (36)', () {
     // Play: new apps/updates must target Android 16 (API 36) from
-    // 2026-08-31 (extension to 2026-11-01 on request). Flutter 3.27's
-    // default is 35, so android/app/build.gradle.kts must set it explicitly
-    // (and the build + Android 16 behaviour must be verified on device).
+    // 2026-08-31 (extension to 2026-11-01 on request). Pinned explicitly in
+    // android/app/build.gradle.kts; CI's android-build job also checks the
+    // built APK. Android 16 behaviour must still be verified on device.
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     final m = RegExp(r'targetSdk\s*=\s*(\d+)').firstMatch(gradle);
     expect(m, isNotNull,
-        reason: 'targetSdk = flutter.targetSdkVersion resolves to 35 on '
-            'Flutter 3.27; set targetSdk = 36 (see docs/release/README.md)');
+        reason: 'pin targetSdk = 36 in android/app/build.gradle.kts '
+            '(see docs/release/README.md)');
     expect(int.parse(m!.group(1)!), greaterThanOrEqualTo(36));
   }, skip: isRelease ? false : 'only enforced when RELEASE=1');
 }

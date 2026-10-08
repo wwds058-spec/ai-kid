@@ -6,7 +6,7 @@ part 'subscription_state.g.dart';
 /// Source of truth is RevenueCat; this is a local cache so the app
 /// works offline without hitting RC on every launch.
 @freezed
-class SubscriptionState with _$SubscriptionState {
+abstract class SubscriptionState with _$SubscriptionState {
   const factory SubscriptionState({
     @Default(false) bool isPremium,
     DateTime? expiresAt,

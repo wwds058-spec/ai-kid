@@ -41,13 +41,13 @@ class SpeechService {
 
     try {
       await _stt.listen(
-      localeId: localeId,
-      listenFor: const Duration(seconds: 12),
-      pauseFor: const Duration(seconds: 3),
       // Privacy: never send a child's voice to a cloud recogniser. If the
       // device has no offline model for this language, listening fails and
       // the episode skips the speaking step.
       listenOptions: stt.SpeechListenOptions(
+        localeId: localeId,
+        listenFor: const Duration(seconds: 12),
+        pauseFor: const Duration(seconds: 3),
         onDevice: true,
         partialResults: false,
         cancelOnError: true,
@@ -80,7 +80,9 @@ class SpeechService {
   }
 }
 
-@riverpod
+// Lives for the whole app: it owns long-lived state (router / player /
+// recogniser) and is only read, not watched, by its users.
+@Riverpod(keepAlive: true)
 SpeechService speechService(Ref ref) {
   final service = SpeechService();
   ref.onDispose(service.dispose);
