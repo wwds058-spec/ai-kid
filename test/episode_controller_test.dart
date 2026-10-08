@@ -1,5 +1,6 @@
 import 'package:ai_explorer/core/audio/audio_service.dart';
 import 'package:ai_explorer/core/speech/speech_service.dart';
+import 'package:ai_explorer/core/storage/models/parent_settings.dart';
 import 'package:ai_explorer/core/storage/models/subscription_state.dart';
 import 'package:ai_explorer/curriculum/episode_controller.dart';
 import 'package:ai_explorer/curriculum/episode_loader.dart';
@@ -268,5 +269,25 @@ void main() {
     await reachSpeakStep();
     await ctrl().handleSpeech('yes');
     expect(replyEmotion, 'happy');
+  });
+
+  test('voice answers off: speaking step is skipped and the mic never opens',
+      () async {
+    audio = FakeAudio();
+    speech = FakeSpeech();
+    storage = FakeStorage(settings: const ParentSettings(voiceEnabled: false));
+    container = ProviderContainer(overrides: [
+      episodeLoaderProvider.overrideWithValue(FakeLoader(_script())),
+      audioServiceProvider.overrideWithValue(audio),
+      speechServiceProvider.overrideWithValue(speech),
+      hiveStorageServiceProvider.overrideWithValue(storage),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(episodeControllerProvider('pf_test'), (_, __) {});
+    await ctrl().start();
+    await reachSpeakStep();
+    expect(speech.started, 0);
+    expect(audio.played, isNot(contains('a4')), reason: 'prompt not played');
+    expect(st(), isA<EpisodeComplete>());
   });
 }

@@ -1,144 +1,131 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../curriculum/episode_controller.dart';
 import '../storage/hive_storage_service.dart';
 import '../storage/models/subscription_state.dart';
+import 'store_client.dart';
 
-part 'purchase_service.g.dart';
+export 'store_client.dart' show EntitlementSnapshot, StoreClient;
 
 /// What happened when a parent tried to buy Premium.
 enum PurchaseResult {
-  /// Store charged and the 'premium' entitlement is now active.
+  /// Store charged and the Premium entitlement is now active.
   unlocked,
   /// Parent closed the store sheet.
   cancelled,
-  /// Store reported success but no 'premium' entitlement came back
+  /// Store reported success but no Premium entitlement came back
   /// (usually a RevenueCat product/entitlement misconfiguration).
   notEntitled,
-  /// No offering/package to sell (offline, or none configured).
+  /// No store, no offering, no network, or no API key in this build.
   unavailable,
   /// Any other store error.
   failed,
 }
 
-/// Wraps RevenueCat and keeps [SubscriptionState] in Hive in sync.
+enum RestoreResult { found, nothingFound, unavailable }
+
+enum SyncResult {
+  /// Store answered; the cache now matches it.
+  verified,
+  /// Store unreachable; the cached entitlement (with grace) still applies.
+  offline,
+  /// No API key in this build; nothing to sync.
+  notConfigured,
+}
+
+/// Premium entitlement rules. The store (RevenueCat) is the source of truth;
+/// [HiveStorageService] caches its last answer so the app works offline.
 ///
-/// Call [PurchaseService.configure] once in main() AFTER HiveStorageService.init().
-/// Then use [purchaseServiceProvider] throughout the app.
+///  • active               → Premium until expiresAt
+///  • active, !willRenew   → cancelled by the parent; Premium until expiresAt
+///  • active, billingIssue → Play's payment grace; still Premium, parent told
+///  • inactive             → expired, refunded or revoked: locked at once
+///  • store unreachable    → keep the cache; SubscriptionState allows 3 days
+///                           past expiresAt before locking
 class PurchaseService {
-  PurchaseService._();
+  PurchaseService({required this.storage, required this.client});
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Static init — called once in main()
-  // ─────────────────────────────────────────────────────────────────────────
+  final HiveStorageService storage;
+  final StoreClient client;
+  bool _configured = false;
 
-  /// Configure RevenueCat SDK and sync the current entitlement to Hive.
-  ///
-  /// [apiKey]  — public SDK key from app.revenuecat.com
-  /// [storage] — already-initialised HiveStorageService
-  static Future<void> configure({
-    required String apiKey,
-    required HiveStorageService storage,
-  }) async {
-    await Purchases.setLogLevel(LogLevel.error);
-    await Purchases.configure(PurchasesConfiguration(apiKey));
-    // Sync immediately so the app has fresh entitlement on launch
-    await _syncToHive(storage);
+  bool get isConfigured => _configured;
+
+  /// Configure the store. An empty [apiKey] (no --dart-define) leaves
+  /// purchases unavailable instead of crashing.
+  Future<void> init(String apiKey,
+      {void Function()? onEntitlementChanged}) async {
+    if (apiKey.isEmpty || _configured) return;
+    try {
+      await client.configure(apiKey);
+      _configured = true;
+      client.onChange((snap) async {
+        await _save(snap);
+        onEntitlementChanged?.call();
+      });
+    } catch (_) {
+      _configured = false;
+    }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Instance — injected via Riverpod after configure() has run
-  // ─────────────────────────────────────────────────────────────────────────
-
-  final _storage = HiveStorageService();
-
-  /// Restore purchases (called from Parent Dashboard).
-  /// Returns true if a premium entitlement was found.
-  Future<bool> restorePurchases() async {
+  Future<SyncResult> sync() async {
+    if (!_configured) return SyncResult.notConfigured;
     try {
-      final info = await Purchases.restorePurchases();
-      return await _applyCustomerInfo(info);
-    } catch (_) {
-      return false;
+      await _save(await client.fetch());
+      return SyncResult.verified;
+    } on StoreException {
+      return SyncResult.offline;
     }
   }
 
   /// Buy the current offering's annual package. Never throws.
   Future<PurchaseResult> buyAnnual() async {
-    final package = (await fetchOfferings())?.current?.annual;
-    if (package == null) return PurchaseResult.unavailable;
+    if (!_configured) return PurchaseResult.unavailable;
     try {
-      final info = await Purchases.purchasePackage(package);
-      return await _applyCustomerInfo(info)
-          ? PurchaseResult.unlocked
-          : PurchaseResult.notEntitled;
-    } on PlatformException catch (e) {
-      return PurchasesErrorHelper.getErrorCode(e) ==
-              PurchasesErrorCode.purchaseCancelledError
-          ? PurchaseResult.cancelled
-          : PurchaseResult.failed;
-    } catch (_) {
-      return PurchaseResult.failed;
+      final snap = await client.buyAnnual();
+      await _save(snap);
+      return snap.active ? PurchaseResult.unlocked : PurchaseResult.notEntitled;
+    } on StoreException catch (e) {
+      return switch (e.kind) {
+        StoreErrorKind.cancelled => PurchaseResult.cancelled,
+        StoreErrorKind.unavailable => PurchaseResult.unavailable,
+        StoreErrorKind.failed => PurchaseResult.failed,
+      };
     }
   }
 
-  /// Fetch available offerings from RevenueCat.
-  Future<Offerings?> fetchOfferings() async {
+  /// Restore purchases (parent dashboard). Never throws.
+  Future<RestoreResult> restorePurchases() async {
+    if (!_configured) return RestoreResult.unavailable;
     try {
-      return await Purchases.getOfferings();
-    } catch (_) {
-      return null;
+      final snap = await client.restore();
+      await _save(snap);
+      return snap.active ? RestoreResult.found : RestoreResult.nothingFound;
+    } on StoreException {
+      return RestoreResult.unavailable;
     }
   }
 
-  Future<bool> _applyCustomerInfo(CustomerInfo info) async {
-    final isPremium = info.entitlements.active.containsKey('premium');
-    final expiresAt = isPremium
-        ? DateTime.tryParse(
-            info.entitlements.active['premium']?.expirationDate ?? '')
-        : null;
-    final productId =
-        info.entitlements.active['premium']?.productIdentifier;
+  Future<void> _save(EntitlementSnapshot snap) =>
+      storage.saveSubscription(stateFrom(snap, DateTime.now()));
 
-    await _storage.saveSubscription(
-      SubscriptionState(
-        isPremium: isPremium,
-        expiresAt: expiresAt,
-        productId: productId,
-        lastVerifiedAt: DateTime.now(),
-      ),
-    );
-    return isPremium;
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-
-  static Future<void> _syncToHive(HiveStorageService storage) async {
-    try {
-      final info = await Purchases.getCustomerInfo();
-      final isPremium = info.entitlements.active.containsKey('premium');
-      final expiresAt = isPremium
-          ? DateTime.tryParse(
-              info.entitlements.active['premium']?.expirationDate ?? '')
-          : null;
-      final productId =
-          info.entitlements.active['premium']?.productIdentifier;
-
-      await storage.saveSubscription(
-        SubscriptionState(
-          isPremium: isPremium,
-          expiresAt: expiresAt,
-          productId: productId,
-          lastVerifiedAt: DateTime.now(),
-        ),
-      );
-    } catch (_) {
-      // Network unavailable — keep previous Hive value (grace period covers this)
-    }
-  }
+  static SubscriptionState stateFrom(EntitlementSnapshot snap, DateTime now) =>
+      snap.active
+          ? SubscriptionState(
+              isPremium: true,
+              expiresAt: snap.expiresAt,
+              productId: snap.productId,
+              willRenew: snap.willRenew,
+              billingIssue: snap.billingIssue,
+              lastVerifiedAt: now,
+            )
+          : SubscriptionState(lastVerifiedAt: now);
 }
 
-@riverpod
-PurchaseService purchaseService(Ref ref) => PurchaseService._();
+final storeClientProvider =
+    Provider<StoreClient>((ref) => RevenueCatStoreClient());
+
+final purchaseServiceProvider = Provider<PurchaseService>((ref) =>
+    PurchaseService(
+        storage: ref.read(hiveStorageServiceProvider),
+        client: ref.read(storeClientProvider)));

@@ -14,6 +14,10 @@ class SubscriptionState with _$SubscriptionState {
     String? productId,
     /// UTC timestamp when we last verified with RevenueCat
     DateTime? lastVerifiedAt,
+    /// False once the parent cancels: Premium stays until [expiresAt].
+    @Default(true) bool willRenew,
+    /// Google Play reported a payment problem (Play's own grace period).
+    @Default(false) bool billingIssue,
   }) = _SubscriptionState;
 
   const SubscriptionState._();

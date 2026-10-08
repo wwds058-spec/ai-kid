@@ -32,9 +32,6 @@ dependencies:
   # Widget animation
   flutter_animate: ^4.5.0
 
-  # IAP
-  in_app_purchase: ^3.1.13
-
   # RevenueCat
   purchases_flutter: ^6.29.1
 

@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../core/storage/models/child_profile.dart';
 import '../curriculum/episode_catalog.dart';
 import '../curriculum/episode_controller.dart';
+import 'parent_strings.dart';
 import 'strings.dart';
 
 /// The child's language ('en' | 'hi' | 'te'), saved in their ChildProfile.
@@ -36,3 +37,8 @@ final languageProvider =
 
 final stringsProvider =
     Provider<AppStrings>((ref) => AppStrings.of(ref.watch(languageProvider)));
+
+/// Parent-facing text. English for every language until ParentStrings.all
+/// gains translations; screens need no change when it does.
+final parentStringsProvider = Provider<ParentStrings>(
+    (ref) => ParentStrings.of(ref.watch(languageProvider)));

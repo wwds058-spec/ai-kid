@@ -120,6 +120,15 @@ class EpisodeController extends _$EpisodeController {
     final s = _runningOrNull();
     if (s == null) return;
 
+    // Parent turned voice answers off: never open the mic. Skip the whole
+    // speaking step (its prompt asks for an answer and its fallback lines
+    // assume the child spoke).
+    if (step.type == StepType.speak &&
+        !ref.read(hiveStorageServiceProvider).getSettings().voiceEnabled) {
+      await _nextStep();
+      return;
+    }
+
     // Set Aiko emotion (UI observes this separately via aikoController)
     // We emit it on state so EpisodePlayerScreen can forward it
     state = s.copyWith(

@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
-import 'core/purchases/purchase_service.dart';
+import 'core/purchases/subscription_provider.dart';
 import 'core/storage/hive_storage_service.dart';
 
-/// Replace with your RevenueCat PUBLIC SDK key.
-/// Found at app.revenuecat.com → Project → API keys → Public app-specific key.
-const _kRevenueCatKey = 'YOUR_REVENUECAT_PUBLIC_SDK_KEY';
+/// RevenueCat public Android SDK key, supplied at build time:
+///   flutter build appbundle --dart-define=REVENUECAT_ANDROID_KEY=goog_xxx
+/// Without it the app runs with purchases unavailable (free content only).
+const _kRevenueCatKey = String.fromEnvironment('REVENUECAT_ANDROID_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,21 +21,18 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  // Initialise Hive before RevenueCat so storage is ready for subscription sync
-  final storage = HiveStorageService();
+  // Storage first: the cached entitlement lets the app start offline.
   await HiveStorageService.init();
 
-  // Configure RevenueCat and sync entitlement to Hive immediately.
-  // If offline, the previous Hive value is kept (3-day grace period applies).
-  await PurchaseService.configure(
-    apiKey: _kRevenueCatKey,
-    storage: storage,
-  );
-
+  final container = ProviderContainer();
   runApp(
-    // ProviderScope is the root for all Riverpod providers
-    const ProviderScope(
-      child: AIExplorerApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const SubscriptionLifecycle(child: AIExplorerApp()),
     ),
   );
+
+  // Verify the entitlement in the background; launch never waits on the
+  // network. The cached value (with grace) applies until this completes.
+  unawaited(container.read(subscriptionProvider.notifier).start(_kRevenueCatKey));
 }

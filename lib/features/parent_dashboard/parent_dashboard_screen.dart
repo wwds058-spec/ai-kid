@@ -7,13 +7,15 @@ import '../../app/theme.dart';
 import '../../core/purchases/purchase_service.dart';
 import '../../core/purchases/subscription_provider.dart';
 import '../../core/security/parent_gate.dart';
+import '../../core/storage/models/subscription_state.dart';
 import '../../curriculum/episode_catalog.dart';
 import '../../curriculum/episode_controller.dart';
 import '../../l10n/language.dart';
+import '../../l10n/parent_strings.dart';
 import '../../l10n/strings.dart';
 
-/// Parent Dashboard — protected by PIN in Phase 2.
-/// Phase 1: stub showing basic stats and settings toggles.
+/// Parent Dashboard — reached only through the PIN gate.
+/// All text comes from [ParentStrings] (English for now).
 class ParentDashboardScreen extends ConsumerStatefulWidget {
   const ParentDashboardScreen({super.key});
 
@@ -25,22 +27,11 @@ class ParentDashboardScreen extends ConsumerStatefulWidget {
 class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   bool _busy = false;
 
-  static const _purchaseMessages = {
-    PurchaseResult.unlocked: '✅ Premium unlocked!',
-    PurchaseResult.cancelled: 'Purchase cancelled.',
-    PurchaseResult.notEntitled:
-        'The store accepted the payment but Premium did not activate. '
-            'Try "Restore Purchases".',
-    PurchaseResult.unavailable:
-        "Purchases aren't available right now. Check your connection.",
-    PurchaseResult.failed: 'Purchase failed. Please try again.',
-  };
-
   Future<void> _run(Future<String> Function() action) async {
     setState(() => _busy = true);
     final message = await action();
     // PurchaseService has written the new entitlement; publish it so the
-    // world map and episodes unlock immediately.
+    // world map and episodes update immediately.
     ref.read(subscriptionProvider.notifier).refresh();
     if (!mounted) return;
     setState(() => _busy = false);
@@ -48,29 +39,46 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<String> _upgrade() async =>
-      _purchaseMessages[await ref.read(purchaseServiceProvider).buyAnnual()]!;
+  Future<String> _upgrade(ParentStrings p) async =>
+      switch (await ref.read(purchaseServiceProvider).buyAnnual()) {
+        PurchaseResult.unlocked => p.purchaseUnlocked,
+        PurchaseResult.cancelled => p.purchaseCancelled,
+        PurchaseResult.notEntitled => p.purchaseNotEntitled,
+        PurchaseResult.unavailable => p.purchaseUnavailable,
+        PurchaseResult.failed => p.purchaseFailed,
+      };
 
-  Future<String> _restore() async =>
-      await ref.read(purchaseServiceProvider).restorePurchases()
-          ? '✅ Premium restored!'
-          : 'No purchases found.';
+  Future<String> _restore(ParentStrings p) async =>
+      switch (await ref.read(purchaseServiceProvider).restorePurchases()) {
+        RestoreResult.found => p.restoreFound,
+        RestoreResult.nothingFound => p.restoreNothing,
+        RestoreResult.unavailable => p.restoreUnavailable,
+      };
+
+  static String _date(DateTime d) => d.toLocal().toString().split(' ').first;
+
+  static String statusText(SubscriptionState sub, ParentStrings p, DateTime now) =>
+      ParentDashboardScreenStatus.text(sub, p, now);
 
   @override
   Widget build(BuildContext context) {
+    final p = ref.watch(parentStringsProvider);
     final storage = ref.read(hiveStorageServiceProvider);
     final settings = storage.getSettings();
     final progress = storage.allProgress();
     final sub = ref.watch(subscriptionProvider);
     final lang = ref.watch(languageProvider);
+    final now = DateTime.now();
+    final storeReady = ref.read(purchaseServiceProvider).isConfigured;
     final inGrace = sub.isActiveWithGrace &&
         sub.expiresAt != null &&
-        DateTime.now().isAfter(sub.expiresAt!);
+        now.isAfter(sub.expiresAt!);
+    final offerPurchase = !sub.isActiveWithGrace || inGrace;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parent Dashboard',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(p.dashboardTitle,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: AIExplorerTheme.purple,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -85,35 +93,35 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // ── Stats ──────────────────────────────────────────────────────
-          _SectionTitle('Progress'),
-          _StatRow('Episodes completed',
-              '${progress.where((p) => p.completed).length}'),
-          _StatRow('Total badges earned',
-              '${progress.expand((p) => p.badgesEarned).length}'),
-          _StatRow('Disclosure events',
-              '${settings.disclosureLog.length}'),
+          // ── Progress ───────────────────────────────────────────────────
+          _SectionTitle(p.progress),
+          _StatRow(p.episodesCompleted,
+              '${progress.where((e) => e.completed).length}'),
+          _StatRow(p.badgesEarned,
+              '${progress.expand((e) => e.badgesEarned).length}'),
+          _StatRow(p.safetyEvents, '${settings.disclosureLog.length}'),
 
           const SizedBox(height: 24),
           // ── Subscription ───────────────────────────────────────────────
-          _SectionTitle('Subscription'),
-          _StatRow(
-              'Status',
-              !sub.isActiveWithGrace
-                  ? '🔓 Free'
-                  : inGrace
-                      ? '⚠️ Premium (expired, grace period)'
-                      : '✅ Premium'),
-          if (sub.expiresAt != null)
-            _StatRow('Expires', sub.expiresAt!.toLocal().toString().split(' ').first),
+          _SectionTitle(p.subscription),
+          _StatRow(p.status, statusText(sub, p, now)),
+          if (sub.isActiveWithGrace && sub.expiresAt != null)
+            _StatRow('',
+                sub.willRenew ? p.expires(_date(sub.expiresAt!)) : p.premiumUntil(_date(sub.expiresAt!))),
+          if (!storeReady)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(p.storeNotConfigured,
+                  style: const TextStyle(color: Colors.grey)),
+            ),
 
           const SizedBox(height: 24),
-          // ── Settings (toggles — Phase 1 read-only) ────────────────────
-          _SectionTitle('Settings'),
+          // ── Settings ───────────────────────────────────────────────────
+          _SectionTitle(p.settings),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Language', style: TextStyle(fontSize: 15)),
+              Text(p.language, style: const TextStyle(fontSize: 15)),
               DropdownButton<String>(
                 key: const ValueKey('language_dropdown'),
                 value: lang,
@@ -128,34 +136,29 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               ),
             ],
           ),
-          _SettingRow(
-            label: 'Voice interaction',
+          SwitchListTile(
+            key: const ValueKey('voice_switch'),
+            title: Text(p.voice),
+            subtitle: Text(p.voiceHelp),
             value: settings.voiceEnabled,
-            onChanged: (v) {
-              storage.saveSettings(settings.copyWith(voiceEnabled: v));
+            activeColor: AIExplorerTheme.purple,
+            contentPadding: EdgeInsets.zero,
+            onChanged: (v) async {
+              await storage.saveSettings(settings.copyWith(voiceEnabled: v));
               setState(() {});
             },
           ),
-          _SettingRow(
-            label: 'AI interaction enabled',
-            value: settings.aiInteractionEnabled,
-            onChanged: (v) {
-              storage.saveSettings(settings.copyWith(aiInteractionEnabled: v));
-              setState(() {});
-            },
-          ),
-          _StatRow('Daily limit', '${settings.dailyLimitMinutes} minutes'),
 
           const SizedBox(height: 32),
-          if (!sub.isActiveWithGrace || inGrace)
+          if (offerPurchase)
             ElevatedButton(
-              onPressed: _busy ? null : () => _run(_upgrade),
-              child: Text(inGrace ? 'Renew Premium' : 'Upgrade to Premium'),
+              onPressed: _busy ? null : () => _run(() => _upgrade(p)),
+              child: Text(inGrace ? p.renew : p.upgrade),
             ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: _busy ? null : () => _run(_restore),
-            child: const Text('Restore Purchases'),
+            onPressed: _busy ? null : () => _run(() => _restore(p)),
+            child: Text(p.restore),
           ),
           if (_busy)
             const Padding(
@@ -165,6 +168,17 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         ],
       ),
     );
+  }
+}
+
+/// Subscription status line for the parent dashboard.
+abstract final class ParentDashboardScreenStatus {
+  static String text(SubscriptionState sub, ParentStrings p, DateTime now) {
+    if (!sub.isActiveWithGrace) return p.statusFree;
+    if (sub.expiresAt != null && now.isAfter(sub.expiresAt!)) return p.statusGrace;
+    if (sub.billingIssue) return p.statusBillingIssue;
+    if (!sub.willRenew) return p.statusCancelled;
+    return p.statusPremium;
   }
 }
 
@@ -205,20 +219,5 @@ class _StatRow extends StatelessWidget {
             ),
           ],
         ),
-      );
-}
-
-class _SettingRow extends StatelessWidget {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  const _SettingRow({required this.label, required this.value, required this.onChanged});
-  @override
-  Widget build(BuildContext context) => SwitchListTile(
-        title: Text(label),
-        value: value,
-        onChanged: onChanged,
-        activeColor: AIExplorerTheme.purple,
-        contentPadding: EdgeInsets.zero,
       );
 }
