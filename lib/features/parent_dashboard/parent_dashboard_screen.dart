@@ -14,6 +14,7 @@ import '../../curriculum/episode_controller.dart';
 import '../../l10n/language.dart';
 import '../../l10n/parent_strings.dart';
 import '../../l10n/strings.dart';
+import 'privacy_policy_screen.dart';
 
 /// Parent Dashboard — reached only through the PIN gate.
 /// All text comes from [ParentStrings] (English for now).
@@ -201,6 +202,17 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               padding: EdgeInsets.only(top: 16),
               child: Center(child: CircularProgressIndicator()),
             ),
+
+          const SizedBox(height: 24),
+          ListTile(
+            key: const ValueKey('privacy_policy'),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: Text(p.privacyPolicy),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const PrivacyPolicyScreen())),
+          ),
         ],
       ),
     );

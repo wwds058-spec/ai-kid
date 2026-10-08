@@ -13,6 +13,7 @@ failures**. It fails until all of these are true:
 | Google Play billing tested for real | `test/release_signoff_test.dart` | `docs/release/signoff.json` → `billing` |
 | Real-device QA passed | `test/release_signoff_test.dart` | `docs/release/signoff.json` → `device_qa` |
 | Release signing with the Play upload key | `test/release_signing_test.dart` + CI `android-build` | `tools/create_upload_key.sh`, GitHub secrets, Play App Signing enrolment (docs/release/SIGNING.md) |
+| Privacy policy reviewed, dated, contact set (and hosted for the Play listing) | `test/privacy_policy_test.dart` | legal review of `assets/legal/privacy_policy_en.md`; host the same text at the URL given in Play Console |
 | Target API 36 (Play requirement for new apps since 2026-08-31) | `test/release_signoff_test.dart` | done: Flutter 3.47.6 toolchain, `compileSdk`/`targetSdk = 36` pinned in `android/app/build.gradle.kts`, CI `android-build` job builds the APK/AAB and checks its targetSdk; Android 16 behaviour still needs device QA |
 
 Never flip a flag to make the gate pass. Each sign-off records who did the

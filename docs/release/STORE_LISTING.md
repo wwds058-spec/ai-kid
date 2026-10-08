@@ -14,7 +14,7 @@ review as the in-app text (docs/TRANSLATION_REVIEW.md).
 | Category | Education |
 | Contact email | _to be set: a Yasvar Labs support address_ |
 | Website | _to be set_ |
-| Privacy policy URL | _required before review; to be written and hosted_ |
+| Privacy policy URL | _host `assets/legal/privacy_policy_en.md` (draft, needs legal review) and put its URL here_ |
 
 **Short description (≤ 80 chars)**
 

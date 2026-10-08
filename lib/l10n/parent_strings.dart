@@ -43,6 +43,7 @@ class ParentStrings {
   final String restoreFound;
   final String restoreNothing;
   final String restoreUnavailable;
+  final String privacyPolicy;
   // PIN gate
   final String parentArea;
   final String createPin;
@@ -93,6 +94,7 @@ class ParentStrings {
     required this.restoreFound,
     required this.restoreNothing,
     required this.restoreUnavailable,
+    required this.privacyPolicy,
     required this.parentArea,
     required this.createPin,
     required this.confirmPin,
@@ -151,6 +153,7 @@ class ParentStrings {
     restoreFound: '✅ Premium restored!',
     restoreNothing: 'No purchases found.',
     restoreUnavailable: "Couldn't reach Google Play. Check your connection.",
+    privacyPolicy: 'Privacy policy',
     parentArea: 'Parent Area',
     createPin: 'Create a 4-digit PIN',
     confirmPin: 'Confirm your PIN',
