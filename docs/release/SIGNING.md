@@ -60,7 +60,7 @@ On every run, with or without secrets, CI also:
 
 ## 4. First upload to Play Console
 
-1. Create the app (package `com.yasin.ai_explorer`, which can't be changed after the first upload).
+1. Create the app under the **Yasvar Labs** developer account, package `com.yasvarlabs.aiexplorer` (permanent after the first upload).
 2. Setup → App signing: accept **Play App Signing** (Google-generated app signing key).
 3. Testing → Internal testing → upload the signed `.aab`. Play records the upload certificate.
 4. Copy both SHA-256 fingerprints (app signing and upload) from Setup → App signing;

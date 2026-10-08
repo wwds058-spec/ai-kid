@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create the Google Play UPLOAD key for AI Explorer — run on YOUR machine,
+# Create the Google Play UPLOAD key for AI Explorer (Yasvar Labs) — run on YOUR machine,
 # never on a shared/cloud machine. See docs/release/SIGNING.md.
 #
 #   tools/create_upload_key.sh [output-dir]      (default: ~/ai-explorer-signing)
@@ -33,7 +33,8 @@ read -rsp "Choose a keystore password (min 12 chars): " store_pw; echo
 [ ${#store_pw} -ge 12 ] || { echo "Password too short."; exit 1; }
 read -rsp "Repeat it: " store_pw2; echo
 [ "$store_pw" = "$store_pw2" ] || { echo "Passwords differ."; exit 1; }
-read -rp "Name or organisation for the certificate (e.g. Yasin): " owner
+read -rp "Organisation for the certificate [Yasvar Labs]: " owner
+owner="${owner:-Yasvar Labs}"
 
 # PKCS12 keystores use one password for store and key.
 keytool -genkeypair -v \

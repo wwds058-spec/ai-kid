@@ -1,5 +1,7 @@
 # Release gate
 
+App: **AI Explorer** by **Yasvar Labs** (`com.yasvarlabs.aiexplorer`). Listing draft: docs/release/STORE_LISTING.md.
+
 `RELEASE=1 flutter test` is the go/no-go check. It must end with **zero
 failures**. It fails until all of these are true:
 

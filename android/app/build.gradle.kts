@@ -39,7 +39,7 @@ if (requireUploadKey && !hasUploadKey) {
 }
 
 android {
-    namespace = "com.yasin.ai_explorer"
+    namespace = "com.yasvarlabs.aiexplorer"
     // Pinned (not inherited from the Flutter default) so a toolchain change can't
     // silently move them. Google Play requires targetSdk >= 36 for new apps and
     // updates since 2026-08-31; test/release_signoff_test.dart enforces it.
@@ -53,7 +53,7 @@ android {
 
     defaultConfig {
         // Permanent once the first build is uploaded to Google Play.
-        applicationId = "com.yasin.ai_explorer"
+        applicationId = "com.yasvarlabs.aiexplorer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

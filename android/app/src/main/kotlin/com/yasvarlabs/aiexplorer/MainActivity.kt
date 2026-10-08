@@ -1,4 +1,4 @@
-package com.yasin.ai_explorer
+package com.yasvarlabs.aiexplorer
 
 import android.os.SystemClock
 import io.flutter.embedding.android.FlutterActivity

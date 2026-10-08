@@ -7,7 +7,7 @@
 ## 1. Create the Flutter project (run once)
 
 ```bash
-flutter create --org com.yasin --project-name ai_explorer --platforms android .
+flutter create --org com.yasvarlabs --project-name ai_explorer --platforms android .
 ```
 
 ## 2. Replace generated files
