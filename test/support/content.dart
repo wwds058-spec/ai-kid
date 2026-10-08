@@ -30,11 +30,15 @@ class EpisodeFile {
       ];
 }
 
+/// Episode files in path order: filesystem listing order differs between
+/// machines, and generated artefacts (review sheets) must be deterministic.
 List<EpisodeFile> loadEpisodeFiles() => [
       for (final f in Directory('assets/episodes')
           .listSync(recursive: true)
           .whereType<File>()
-          .where((f) => f.path.endsWith('.json')))
+          .where((f) => f.path.endsWith('.json'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path)))
         () {
           final raw = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
           return EpisodeFile(f, raw, EpisodeScript.fromJson(raw));
