@@ -3,6 +3,7 @@ import 'package:ai_explorer/core/speech/speech_service.dart';
 import 'package:ai_explorer/core/storage/hive_storage_service.dart';
 import 'package:ai_explorer/core/storage/models/episode_progress.dart';
 import 'package:ai_explorer/core/storage/models/parent_settings.dart';
+import 'package:ai_explorer/core/storage/models/subscription_state.dart';
 import 'package:ai_explorer/curriculum/episode_controller.dart';
 import 'package:ai_explorer/curriculum/episode_loader.dart';
 import 'package:ai_explorer/curriculum/models/episode_script.dart';
@@ -35,6 +36,9 @@ class FakeSpeech extends Fake implements SpeechService {
 class FakeStorage extends Fake implements HiveStorageService {
   final progress = <String, EpisodeProgress>{};
   ParentSettings settings = const ParentSettings();
+  SubscriptionState sub = const SubscriptionState();
+  @override
+  SubscriptionState getSubscription() => sub;
   @override
   EpisodeProgress? getProgress(String id) => progress[id];
   @override
@@ -53,9 +57,10 @@ class FakeLoader extends Fake implements EpisodeLoader {
   Future<EpisodeScript> load(String episodeId) async => script;
 }
 
-EpisodeScript _script({int timeout = 8}) => EpisodeScript(
+EpisodeScript _script({int timeout = 8, bool premium = false}) => EpisodeScript(
       id: 'pf_test',
       world: 'pattern_forest',
+      premium: premium,
       title: const {'en': 'Test'},
       steps: [
         const EpisodeStep(
@@ -102,12 +107,15 @@ void main() {
       container.read(episodeControllerProvider('pf_test').notifier);
   EpisodeState st() => container.read(episodeControllerProvider('pf_test'));
 
-  Future<void> boot({int timeout = 8}) async {
+  Future<void> boot(
+      {int timeout = 8, bool premium = false, SubscriptionState? sub}) async {
     audio = FakeAudio();
     speech = FakeSpeech();
     storage = FakeStorage();
+    if (sub != null) storage.sub = sub;
     container = ProviderContainer(overrides: [
-      episodeLoaderProvider.overrideWithValue(FakeLoader(_script(timeout: timeout))),
+      episodeLoaderProvider.overrideWithValue(
+          FakeLoader(_script(timeout: timeout, premium: premium))),
       audioServiceProvider.overrideWithValue(audio),
       speechServiceProvider.overrideWithValue(speech),
       hiveStorageServiceProvider.overrideWithValue(storage),
@@ -211,5 +219,17 @@ void main() {
     final playedBefore = audio.played.length;
     await ctrl().handleSpeech('yes'); // arrives after timeout
     expect(audio.played.length, playedBefore);
+  });
+
+  test('premium episode without a subscription is locked and plays nothing',
+      () async {
+    await boot(premium: true);
+    expect(st(), isA<EpisodeLocked>());
+    expect(audio.played, isEmpty);
+  });
+
+  test('premium episode plays for an active subscriber', () async {
+    await boot(premium: true, sub: const SubscriptionState(isPremium: true));
+    expect(st(), isA<EpisodeRunning>());
   });
 }

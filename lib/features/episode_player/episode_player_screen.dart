@@ -65,6 +65,7 @@ class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen> {
             });
             return const _LoadingView();
           },
+          locked: () => const _LockedView(),
           error: (msg) => _ErrorView(message: msg),
         ),
       ),
@@ -79,6 +80,31 @@ class _LoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Center(
         child: CircularProgressIndicator(color: AIExplorerTheme.purple),
+      );
+}
+
+class _LockedView extends StatelessWidget {
+  const _LockedView();
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🔒', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              const Text('This adventure needs Premium.\nAsk a grown-up!',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go(Routes.worldMap),
+                child: const Text('Back to Worlds 🗺️'),
+              ),
+            ],
+          ),
+        ),
       );
 }
 

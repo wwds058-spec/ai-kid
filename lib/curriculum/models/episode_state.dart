@@ -26,6 +26,10 @@ class EpisodeState with _$EpisodeState {
     required List<String> badgesEarned,
   }) = EpisodeComplete;
 
+  // ── Locked ───────────────────────────────────────────────────────────────
+  /// Premium episode opened without an active subscription.
+  const factory EpisodeState.locked() = EpisodeLocked;
+
   // ── Error ────────────────────────────────────────────────────────────────
   const factory EpisodeState.error(String message) = EpisodeError;
 }

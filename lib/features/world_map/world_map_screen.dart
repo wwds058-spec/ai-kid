@@ -83,14 +83,54 @@ class _WorldCard extends ConsumerWidget {
     if (id != null) context.go(Routes.episodePath(id));
   }
 
+  /// Locked worlds ask for a grown-up; purchases only happen in the
+  /// PIN-protected parent dashboard, never from the child's screens.
+  void _askGrownUp(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('${world.emoji} ${world.name}'),
+        content: const Text('This world is part of Premium. '
+            'Ask a grown-up to unlock it!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.go(Routes.pinGate);
+            },
+            child: const Text("I'm a grown-up"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPremium = ref
+        .read(hiveStorageServiceProvider)
+        .getSubscription()
+        .isActiveWithGrace;
+    final hasContent = EpisodeCatalog.episodesIn(world.world).isNotEmpty;
+    final locked = world.premium && !isPremium;
+    final comingSoon = !locked && !hasContent;
+    final dimmed = locked || comingSoon;
+    final badge = locked ? '🔒 Premium' : (comingSoon ? '🌱 Coming soon' : null);
+
     return GestureDetector(
-      onTap: world.premium ? null : () => _open(context, ref),
+      onTap: locked
+          ? () => _askGrownUp(context)
+          : comingSoon
+              ? null
+              : () => _open(context, ref),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: world.premium ? Colors.grey[100] : world.color.withOpacity(.1),
+          color: dimmed ? Colors.grey[100] : world.color.withOpacity(.1),
           border: Border.all(color: world.color.withOpacity(.4), width: 2),
           borderRadius: BorderRadius.circular(20),
         ),
@@ -107,8 +147,8 @@ class _WorldCard extends ConsumerWidget {
                       style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: world.premium ? Colors.grey : world.color)),
-                  if (world.premium)
+                          color: dimmed ? Colors.grey : world.color)),
+                  if (badge != null)
                     Container(
                       margin: const EdgeInsets.only(top: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -116,14 +156,14 @@ class _WorldCard extends ConsumerWidget {
                         color: AIExplorerTheme.yellow.withOpacity(.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('🔒 Premium',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      child: Text(badge,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
             ),
             Icon(Icons.arrow_forward_ios_rounded,
-                color: world.premium ? Colors.grey[300] : world.color, size: 18),
+                color: dimmed ? Colors.grey[300] : world.color, size: 18),
           ],
         ),
       ),

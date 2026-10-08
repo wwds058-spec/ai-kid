@@ -37,6 +37,13 @@ class EpisodeController extends _$EpisodeController {
     state = const EpisodeState.loading();
     try {
       final script = await ref.read(episodeLoaderProvider).load(episodeId);
+      // Belt and braces: the world map hides premium content, but a premium
+      // episode must not play from any route without an active entitlement.
+      final sub = ref.read(hiveStorageServiceProvider).getSubscription();
+      if (script.premium && !sub.isActiveWithGrace) {
+        state = const EpisodeState.locked();
+        return;
+      }
       state = EpisodeState.running(script: script, stepIndex: 0, lang: lang);
       await _runStep(script.steps.first);
     } catch (e) {

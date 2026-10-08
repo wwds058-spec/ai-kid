@@ -1,6 +1,7 @@
 import 'package:ai_explorer/app/router.dart';
 import 'package:ai_explorer/core/storage/hive_storage_service.dart';
 import 'package:ai_explorer/core/storage/models/episode_progress.dart';
+import 'package:ai_explorer/core/storage/models/subscription_state.dart';
 import 'package:ai_explorer/curriculum/episode_controller.dart';
 import 'package:ai_explorer/features/onboarding/onboarding_screen.dart';
 import 'package:ai_explorer/features/world_map/world_map_screen.dart';
@@ -10,10 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 class FakeStorage extends Fake implements HiveStorageService {
-  FakeStorage([this.progress = const []]);
+  FakeStorage([this.progress = const [], this.sub = const SubscriptionState()]);
   final List<EpisodeProgress> progress;
+  final SubscriptionState sub;
   @override
   List<EpisodeProgress> allProgress() => progress;
+  @override
+  SubscriptionState getSubscription() => sub;
 }
 
 Widget _app(Widget home, {FakeStorage? storage}) => ProviderScope(
@@ -69,5 +73,29 @@ void main() {
     await tester.tap(find.text('Pattern Forest'));
     await tester.pumpAndSettle();
     expect(find.text('EPISODE pf_ep02'), findsOneWidget);
+  });
+
+  testWidgets('locked world asks for a grown-up instead of opening',
+      (tester) async {
+    await tester.pumpWidget(_app(const WorldMapScreen()));
+    expect(find.text('🔒 Premium'), findsNWidgets(2));
+    await tester.tap(find.text('Music Lab'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ask a grown-up'), findsOneWidget);
+    await tester.tap(find.text("I'm a grown-up"));
+    await tester.pumpAndSettle();
+    expect(find.text('PIN GATE'), findsOneWidget);
+  });
+
+  testWidgets('subscriber sees empty premium worlds as coming soon',
+      (tester) async {
+    await tester.pumpWidget(_app(const WorldMapScreen(),
+        storage: FakeStorage(const [], const SubscriptionState(isPremium: true))));
+    expect(find.text('🔒 Premium'), findsNothing);
+    expect(find.text('🌱 Coming soon'), findsNWidgets(2));
+    await tester.tap(find.text('Music Lab'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ask a grown-up'), findsNothing);
+    expect(find.text('PIN GATE'), findsNothing);
   });
 }
