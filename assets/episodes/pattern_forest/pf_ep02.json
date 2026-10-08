@@ -1,0 +1,69 @@
+{
+  "id": "pf_ep02",
+  "world": "pattern_forest",
+  "title": {
+    "en": "Aiko Learns from Examples"
+  },
+  "premium": false,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "watch",
+      "audio": "pf_ep02_s1_intro",
+      "emotion": "excited",
+      "scene": "forest_intro",
+      "advance": "auto"
+    },
+    {
+      "id": "s2",
+      "type": "watch",
+      "audio": "pf_ep02_s2_explain",
+      "emotion": "curious",
+      "scene": "forest_pattern",
+      "advance": "tap"
+    },
+    {
+      "id": "s3",
+      "type": "play",
+      "audio": "pf_ep02_s3_question",
+      "emotion": "curious",
+      "game": "pattern_tap",
+      "gameConfig": {
+        "items": ["🔺", "🟦", "🟢", "🔺", "🟦", "❓"],
+        "answer": "🟢"
+      },
+      "onWrong": "pf_ep02_s3_wrong",
+      "advance": "correctAnswer"
+    },
+    {
+      "id": "s4",
+      "type": "watch",
+      "audio": "pf_ep02_s4_examples",
+      "emotion": "happy",
+      "scene": "forest_pattern",
+      "advance": "tap"
+    },
+    {
+      "id": "s5",
+      "type": "speak",
+      "audio": "pf_ep02_s5_prompt",
+      "emotion": "curious",
+      "intents": [
+        { "match": "COLORS",    "audio": "pf_ep02_s5_r_colors" },
+        { "match": "SHAPES",    "audio": "pf_ep02_s5_r_shapes" },
+        { "match": "DONT_KNOW", "audio": "pf_ep02_s5_r_dontknow" }
+      ],
+      "fallback": "pf_ep02_s5_fallback",
+      "advance": "speech",
+      "timeoutSeconds": 10
+    },
+    {
+      "id": "s6",
+      "type": "reward",
+      "audio": "pf_ep02_s6_reward",
+      "emotion": "celebrate",
+      "badge": "data_collector",
+      "advance": "tap"
+    }
+  ]
+}

@@ -10,6 +10,17 @@ pf_ep01_s4_r_yes,pf_ep01,s4,happy,Great! Patterns are everywhere. Let's keep loo
 pf_ep01_s4_fallback,pf_ep01,s4,normal,"I didn't quite hear that, but that's okay! A pattern is something that repeats.",Unrecognised speech / timeout
 pf_ep01_s5_explain,pf_ep01,s5,happy,"Computers learn from patterns too! They look for things that repeat, just like you did. That's how AI learns.",
 pf_ep01_s6_reward,pf_ep01,s6,celebrate,You did it! You're a Pattern Spotter! Here's your badge.,Reward step
+pf_ep02_s1_intro,pf_ep02,s1,excited,"Welcome back, Pattern Spotter! Today I want to learn something new, and I need your help.",
+pf_ep02_s2_explain,pf_ep02,s2,curious,"Look! Triangle, square, circle. Triangle, square, circle. This pattern has three parts that repeat. Tap to continue!",
+pf_ep02_s3_question,pf_ep02,s3,curious,"Triangle, square, circle, triangle, square... what comes next? Tap the answer!",Game prompt
+pf_ep02_s3_wrong,pf_ep02,s3,curious,"Almost! Say it with me: triangle, square, circle. What comes after square?","Played on a wrong tap; keep it warm, never negative"
+pf_ep02_s4_examples,pf_ep02,s4,happy,"When I see lots of examples, I start to notice the pattern. Examples are called data. The more data I see, the better I learn!",Core idea: examples = data
+pf_ep02_s5_prompt,pf_ep02,s5,curious,"Can you tell me a pattern you see around you? Maybe colours, or shapes?",Child answers by voice; 10s timeout
+pf_ep02_s5_r_colors,pf_ep02,s5,happy,"Ooh, colours! Colourful patterns are everywhere, like on clothes and flags.",Reply to COLORS
+pf_ep02_s5_r_shapes,pf_ep02,s5,happy,"Shapes! You can find shape patterns on floors, tiles and buildings.",Reply to SHAPES
+pf_ep02_s5_r_dontknow,pf_ep02,s5,happy,"That's okay! Later, look at your floor or your clothes. You might find a pattern!",Reply to DONT_KNOW
+pf_ep02_s5_fallback,pf_ep02,s5,normal,What a fun idea! Patterns are hiding all around us.,Unrecognised speech / timeout
+pf_ep02_s6_reward,pf_ep02,s6,celebrate,Amazing! You helped me learn from examples. You're a Data Collector!,Reward step
 generic_fallback,shared,,normal,"Hmm, let's try something else!",Used when a step has no fallback and for blocked speech
 generic_too_long,shared,,normal,"Wow, that was a lot of words! Can you say it a little shorter?",Speech over 120 characters
 safety_tell_grownup,shared,,normal,"It sounds like something important. Please tell a grown-up you trust about it, okay? They can help.",SAFETY: disclosure response. Have a parent/child-safety reviewer approve wording before release

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ai_explorer/core/speech/intent_router.dart';
+import 'package:ai_explorer/curriculum/episode_catalog.dart';
 import 'package:ai_explorer/curriculum/models/episode_script.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,6 +15,19 @@ void main() {
       .where((f) => f.path.endsWith('.json'));
 
   test('at least one episode exists', () => expect(files, isNotEmpty));
+
+  test('catalog lists exactly the episode files, under the right world', () {
+    final onDisk = {
+      for (final f in files)
+        f.uri.pathSegments.last.replaceAll('.json', ''):
+            f.uri.pathSegments[f.uri.pathSegments.length - 2],
+    };
+    final inCatalog = {
+      for (final e in EpisodeCatalog.worlds.entries)
+        for (final id in e.value) id: e.key,
+    };
+    expect(inCatalog, onDisk);
+  });
 
   for (final file in files) {
     group(file.path, () {
@@ -45,6 +59,13 @@ void main() {
             case StepType.play:
               expect(s.advance, AdvanceMode.correctAnswer, reason: s.id);
               expect(s.gameConfig?.answer, isNotNull, reason: s.id);
+              // The game offers the pattern's non-❓ items as choices, so the
+              // answer must be one of them or the step can't be completed.
+              final choices =
+                  s.gameConfig!.items.where((i) => i != '❓').toSet();
+              expect(choices, contains(s.gameConfig!.answer), reason: s.id);
+              expect(s.gameConfig!.items.length, lessThanOrEqualTo(6),
+                  reason: '${s.id}: longer rows overflow narrow phones');
             case StepType.speak:
               expect(s.advance, AdvanceMode.speech, reason: s.id);
               expect(s.intents, isNotEmpty, reason: s.id);

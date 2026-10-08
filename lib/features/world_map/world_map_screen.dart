@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../curriculum/episode_catalog.dart';
+import '../../curriculum/episode_controller.dart';
 
 /// World Map — choose a learning world.
 /// Phase 1: shows Pattern Forest only (free).
@@ -15,7 +18,7 @@ class WorldMapScreen extends StatelessWidget {
       name: 'Pattern Forest',
       emoji: '🌳',
       color: Color(0xFF059669),
-      firstEpisode: 'pf_ep01',
+      world: 'pattern_forest',
       premium: false,
     ),
     _World(
@@ -23,7 +26,7 @@ class WorldMapScreen extends StatelessWidget {
       name: 'Music Lab',
       emoji: '🎵',
       color: Color(0xFF7C3AED),
-      firstEpisode: 'ml_ep01',
+      world: 'music_lab',
       premium: true,
     ),
     _World(
@@ -31,7 +34,7 @@ class WorldMapScreen extends StatelessWidget {
       name: 'Gadget City',
       emoji: '⚙️',
       color: Color(0xFFD97706),
-      firstEpisode: 'gc_ep01',
+      world: 'gadget_city',
       premium: true,
     ),
   ];
@@ -64,16 +67,26 @@ class WorldMapScreen extends StatelessWidget {
   }
 }
 
-class _WorldCard extends StatelessWidget {
+class _WorldCard extends ConsumerWidget {
   final _World world;
   const _WorldCard({required this.world});
 
+  /// Continue the world at its first unfinished episode.
+  void _open(BuildContext context, WidgetRef ref) {
+    final completed = ref
+        .read(hiveStorageServiceProvider)
+        .allProgress()
+        .where((p) => p.completed)
+        .map((p) => p.episodeId)
+        .toSet();
+    final id = EpisodeCatalog.resume(world.world, completed);
+    if (id != null) context.go(Routes.episodePath(id));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: world.premium
-          ? null
-          : () => context.go(Routes.episodePath(world.firstEpisode)),
+      onTap: world.premium ? null : () => _open(context, ref),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
@@ -123,10 +136,10 @@ class _World {
   final String name;
   final String emoji;
   final Color color;
-  final String firstEpisode;
+  final String world;
   final bool premium;
   const _World({
     required this.id, required this.name, required this.emoji,
-    required this.color, required this.firstEpisode, required this.premium,
+    required this.color, required this.world, required this.premium,
   });
 }

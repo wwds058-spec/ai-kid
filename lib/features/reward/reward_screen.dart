@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../curriculum/episode_catalog.dart';
 
 /// Shown when a child completes an episode.
 /// Displays earned badges with celebration animation.
@@ -54,9 +55,17 @@ class RewardScreen extends StatelessWidget {
                     .fadeIn();
               }),
               const Spacer(),
-              ElevatedButton(
+              if (EpisodeCatalog.next(episodeId) case final next?) ...[
+                ElevatedButton(
+                  onPressed: () => context.go(Routes.episodePath(next)),
+                  child: const Text('Next Adventure ▶️'),
+                ).animate().fadeIn(delay: 900.ms),
+                const SizedBox(height: 12),
+              ],
+              TextButton(
                 onPressed: () => context.go(Routes.worldMap),
-                child: const Text('Back to Worlds 🗺️'),
+                child: const Text('Back to Worlds 🗺️',
+                    style: TextStyle(color: Colors.white70, fontSize: 16)),
               ).animate().fadeIn(delay: 900.ms),
             ],
           ),
