@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 
@@ -122,6 +123,8 @@ class _AikoFallback extends StatelessWidget {
       children: [
         Text(_emoji[emotion] ?? '🙂',
             style: const TextStyle(fontSize: 100)),
+        // Emotion label is a developer aid only; children never see it.
+        if (kDebugMode) ...[
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -132,6 +135,7 @@ class _AikoFallback extends StatelessWidget {
           child: Text('Aiko · $emotion',
               style: const TextStyle(color: Colors.white54, fontSize: 12)),
         ),
+        ],
       ],
     );
   }

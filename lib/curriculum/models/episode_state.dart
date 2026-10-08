@@ -18,6 +18,9 @@ class EpisodeState with _$EpisodeState {
     @Default(false) bool awaitingTap,
     @Default(false) bool awaitingAnswer,
     @Default('en') String lang,
+    /// Emotion of a reply/feedback line currently playing; null means the
+    /// step's own emotion. Cleared when the next step starts.
+    String? lineEmotion,
   }) = EpisodeRunning;
 
   // ── Complete ─────────────────────────────────────────────────────────────
@@ -36,7 +39,7 @@ class EpisodeState with _$EpisodeState {
 
 extension EpisodeStateX on EpisodeState {
   EpisodeStep? get currentStep => maybeWhen(
-        running: (script, stepIndex, _, __, ___, ____) =>
+        running: (script, stepIndex, _, __, ___, ____, _____) =>
             script.steps[stepIndex],
         orElse: () => null,
       );

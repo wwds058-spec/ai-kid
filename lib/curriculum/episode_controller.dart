@@ -8,6 +8,7 @@ import '../core/speech/intent_router.dart';
 import '../core/speech/speech_service.dart';
 import '../core/storage/hive_storage_service.dart';
 import '../core/storage/models/episode_progress.dart';
+import 'episode_lines.dart';
 import 'episode_loader.dart';
 import 'models/episode_script.dart';
 import 'models/episode_state.dart';
@@ -75,7 +76,7 @@ class EpisodeController extends _$EpisodeController {
     } else {
       // Play wrong-answer audio and let them try again
       if (step.onWrong != null) {
-        await ref.read(audioServiceProvider).play(step.onWrong!, lang: s.lang);
+        await _say(step.onWrong!);
       }
     }
   }
@@ -99,14 +100,15 @@ class EpisodeController extends _$EpisodeController {
 
       case BlockedSpeech(audioOverride: final audio):
         // Play fallback, stay on same step, re-enable speech
-        await ref.read(audioServiceProvider).play(audio, lang: s.lang);
-        state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
+        await _say(audio);
+        state = (state as EpisodeRunning)
+            .copyWith(awaitingSpeech: true, lineEmotion: null);
         _startSpeechTimeout();
         _startListening();
 
       case DisclosureSpeech(audioOverride: final audio):
         // Play "tell a grown-up", log event (no content), advance
-        await ref.read(audioServiceProvider).play(audio, lang: s.lang);
+        await _say(audio);
         _logDisclosure();
         await _nextStep();
     }
@@ -120,7 +122,11 @@ class EpisodeController extends _$EpisodeController {
 
     // Set Aiko emotion (UI observes this separately via aikoController)
     // We emit it on state so EpisodePlayerScreen can forward it
-    state = s.copyWith(awaitingSpeech: false, awaitingTap: false, awaitingAnswer: false);
+    state = s.copyWith(
+        awaitingSpeech: false,
+        awaitingTap: false,
+        awaitingAnswer: false,
+        lineEmotion: null);
 
     // Play the step's audio
     await ref.read(audioServiceProvider).play(step.audio, lang: s.lang);
@@ -187,8 +193,16 @@ class EpisodeController extends _$EpisodeController {
     final matched = step.intents.where((i) => i.match == intent).firstOrNull;
     final audioId = matched?.audio ?? step.fallback ?? 'generic_fallback';
 
-    await ref.read(audioServiceProvider).play(audioId, lang: s.lang);
+    await _say(audioId);
     await _nextStep();
+  }
+
+  /// Play a reply/feedback line, showing its emotion while it plays.
+  Future<void> _say(String lineId) async {
+    final s = _runningOrNull();
+    if (s == null) return;
+    state = s.copyWith(lineEmotion: emotionOfLine(s.script, lineId));
+    await ref.read(audioServiceProvider).play(lineId, lang: s.lang);
   }
 
   void _startSpeechTimeout() {
@@ -203,7 +217,7 @@ class EpisodeController extends _$EpisodeController {
       state = current.copyWith(awaitingSpeech: false);
       await ref.read(speechServiceProvider).stopListening();
       final fallback = step.fallback ?? 'generic_fallback';
-      await ref.read(audioServiceProvider).play(fallback, lang: s.lang);
+      await _say(fallback);
       await _nextStep();
     });
   }

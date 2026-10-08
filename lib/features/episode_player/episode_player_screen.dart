@@ -42,12 +42,15 @@ class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen> {
       body: SafeArea(
         child: state.when(
           loading: () => const _LoadingView(),
-          running: (script, stepIndex, awaitingSpeech, awaitingTap, awaitingAnswer, lang) {
+          running: (script, stepIndex, awaitingSpeech, awaitingTap,
+              awaitingAnswer, lang, lineEmotion) {
             final step = script.steps[stepIndex];
             // isTalking = not awaiting any interaction (audio is playing)
             final isTalking = !awaitingTap && !awaitingAnswer && !awaitingSpeech;
             return _RunningView(
               step: step,
+              title: script.title[lang] ?? script.title['en'] ?? '',
+              emotion: lineEmotion ?? step.emotion,
               stepIndex: stepIndex,
               totalSteps: script.steps.length,
               awaitingTap: awaitingTap,
@@ -147,6 +150,8 @@ class _ErrorView extends ConsumerWidget {
 
 class _RunningView extends StatelessWidget {
   final EpisodeStep step;
+  final String title;
+  final String emotion;
   final int stepIndex;
   final int totalSteps;
   final bool awaitingTap;
@@ -157,7 +162,8 @@ class _RunningView extends StatelessWidget {
   final ValueChanged<String> onAnswer;
 
   const _RunningView({
-    required this.step, required this.stepIndex, required this.totalSteps,
+    required this.step, required this.title, required this.emotion,
+    required this.stepIndex, required this.totalSteps,
     required this.awaitingTap, required this.awaitingAnswer,
     required this.awaitingSpeech, required this.isTalking,
     required this.onTap, required this.onAnswer,
@@ -169,6 +175,16 @@ class _RunningView extends StatelessWidget {
       onTap: awaitingTap ? onTap : null,
       child: Column(
         children: [
+          // ── Episode title (in the child's language) ──────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Text(title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+          ),
           // ── Progress bar ─────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(16),
@@ -184,7 +200,7 @@ class _RunningView extends StatelessWidget {
           Expanded(
             child: Center(
               child: AikoWidget(
-                emotion: step.emotion,
+                emotion: emotion,
                 isTalking: isTalking,
               ),
             ),

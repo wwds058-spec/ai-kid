@@ -1,0 +1,127 @@
+{
+  "generic_fallback": {
+    "source": "placeholder",
+    "sha256": "2197be2b1e9587e2a0fc99d9f63f025bbedaa13e403c8d72e72925d7e3b63bb9",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "generic_too_long": {
+    "source": "placeholder",
+    "sha256": "fa35170b15b5aed90579d89f2a17a325a5e9d145189d3fefd59ed06e113fa4d5",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s1_intro": {
+    "source": "placeholder",
+    "sha256": "85f018006d0970d790cfea33ba9c611ed38134041063e4dd5b1e6ca7fc5db348",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s2_explain": {
+    "source": "placeholder",
+    "sha256": "ab802b88dd5dd5b361eae5ec53ebe4421200cc94bf76041139f6096b46803aa0",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s3_question": {
+    "source": "placeholder",
+    "sha256": "b0f5eb3998a3f81e5f8252911429142dd1643ca725ac70ba1d5eb804258c1175",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s3_wrong": {
+    "source": "placeholder",
+    "sha256": "59c2ce0037c750cd40fa9d9eaf7b3d7a4f255299e4483ad01f0bc2250a7ff52c",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s4_fallback": {
+    "source": "placeholder",
+    "sha256": "0c6c4ed130a0f790d6a5906799cd32f708b7c457cfda0704b1a3cf963acbca32",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s4_prompt": {
+    "source": "placeholder",
+    "sha256": "bd8393da5daae831ef2193dba7fa85f39474e7701ea4aa806d47745e63b44223",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s4_r_dontknow": {
+    "source": "placeholder",
+    "sha256": "59c273a1cd1bd3dd8f3718cb91f72ec56ca0ff6d71ea25b127c9bb6894eaf5a0",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s4_r_pattern": {
+    "source": "placeholder",
+    "sha256": "b62db9977270c8361f1eb6341081f371f96a8bc34535f7c99085967d4513c05e",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s4_r_yes": {
+    "source": "placeholder",
+    "sha256": "ebfcccf86d29efa638c43bf4df9728e1be90557e0d33b9a194bae7ac5ab0f124",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s5_explain": {
+    "source": "placeholder",
+    "sha256": "c36cdaaa323a955841c8ad45fefb49fbb23d430a2069a3c992a3b85e1990653c",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep01_s6_reward": {
+    "source": "placeholder",
+    "sha256": "c1979fb09a63c7fef9e3a3ce4ad366bb3f3a1ed74247ebe779f3546a7d65b280",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s1_intro": {
+    "source": "placeholder",
+    "sha256": "c86b3dcf4ea38e34a6046bb3552f0d1485041e42c224676f3fb3a1af916b65f9",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s2_explain": {
+    "source": "placeholder",
+    "sha256": "eaf9e289779c7cf0a8fb44daa9b1642f29e15708f54267514d84cbb66288645d",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s3_question": {
+    "source": "placeholder",
+    "sha256": "73c88ce3c7dd65e4d3522f7a4f25e6b3b58b507db6dc6fbbe27be72b00544beb",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s3_wrong": {
+    "source": "placeholder",
+    "sha256": "1747be9f01a31de2a6b9f9cb2ba3fc57b08fdd5523574f3778b34909b1871bd3",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s4_examples": {
+    "source": "placeholder",
+    "sha256": "ff4adf62154daca2672e5595369b051a689129785f9a4f87100cf7423d362bad",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s5_fallback": {
+    "source": "placeholder",
+    "sha256": "d0dc60950de5fdddf04ff94545c3211039a0d86e4b5589c903f1f4d7446b685b",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s5_prompt": {
+    "source": "placeholder",
+    "sha256": "f8c9a41e2c4c2663884145f9f7cf7432ca477266d45bc91ab30c8133167a4c55",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s5_r_colors": {
+    "source": "placeholder",
+    "sha256": "56430194a08fa2b84df9188149f102d2c01dfca33106a36b30db6f105e551a2f",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s5_r_dontknow": {
+    "source": "placeholder",
+    "sha256": "f344acfb7b727a713caa8d9d73c6d4baa0840e1f51d2daf9b3455ea4974ef190",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s5_r_shapes": {
+    "source": "placeholder",
+    "sha256": "50b903ed29acf4810fabb9c33c8ac06054f7ce9a26e853e332f80e9493d7d95e",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "pf_ep02_s6_reward": {
+    "source": "placeholder",
+    "sha256": "56c677216a6e5f8935e3b9a04a6aad7d1d8cd2d30c5a3b28a09cb26d56a95842",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  },
+  "safety_tell_grownup": {
+    "source": "placeholder",
+    "sha256": "338647bbe943d042ab51ea40f08ab088e8a4e549f864b0dc1d1dbead9a851cbd",
+    "detail": "espeak-ng -v en-us+f3 -s 150 -p 65"
+  }
+}

@@ -13,10 +13,12 @@ import 'support/fake_storage.dart';
 class FakeAudio extends Fake implements AudioService {
   final played = <String>[];
   final langs = <String>{};
+  void Function(String lineId)? onPlay;
   @override
   Future<void> play(String lineId, {String lang = 'en'}) async {
     played.add(lineId);
     langs.add(lang);
+    onPlay?.call(lineId);
   }
 }
 
@@ -239,5 +241,32 @@ void main() {
     expect(speech.localeId, 'te-IN');
     await ctrl().handleSpeech('నాకు తెలియదు');
     expect(audio.played, contains('r_dk'));
+  });
+
+  test('Aiko shows each line\'s own emotion while it plays', () async {
+    await boot();
+    final seen = <String, String?>{};
+    audio.onPlay = (id) {
+      final s = st();
+      if (s is EpisodeRunning) seen[id] = s.lineEmotion ?? s.script.steps[s.stepIndex].emotion;
+    };
+    await ctrl().handleTap();
+    await ctrl().handleAnswer('red'); // wrong
+    await ctrl().handleAnswer('blue');
+    await ctrl().handleSpeech('banana'); // unrecognised → fallback
+    expect(seen['wrong'], 'curious');
+    expect(seen['fb'], 'normal');
+    expect(seen['a3'], 'normal', reason: 'step line uses the step emotion');
+  });
+
+  test('reply line shows the intent's emotion', () async {
+    await boot();
+    String? replyEmotion;
+    audio.onPlay = (id) {
+      if (id == 'r_yes') replyEmotion = (st() as EpisodeRunning).lineEmotion;
+    };
+    await reachSpeakStep();
+    await ctrl().handleSpeech('yes');
+    expect(replyEmotion, 'happy');
   });
 }

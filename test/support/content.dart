@@ -42,15 +42,19 @@ List<EpisodeFile> loadEpisodeFiles() => [
     ];
 
 /// line_id → text for docs/audio_script_{lang}.csv.
+Map<String, String> loadAudioScript(String lang) =>
+    loadAudioScriptColumn(lang, 'text_$lang');
+
+/// line_id → [column] for docs/audio_script_{lang}.csv.
 /// Minimal CSV reader: handles quoted fields containing commas and "".
-Map<String, String> loadAudioScript(String lang) {
+Map<String, String> loadAudioScriptColumn(String lang, String column) {
   final lines = File('docs/audio_script_$lang.csv')
       .readAsLinesSync()
       .where((l) => l.trim().isNotEmpty)
       .toList();
   final header = _parseCsvLine(lines.first);
-  final textCol = header.indexOf('text_$lang');
-  if (textCol == -1) throw StateError('no text_$lang column in $lang script');
+  final textCol = header.indexOf(column);
+  if (textCol == -1) throw StateError('no $column column in $lang script');
   return {
     for (final l in lines.skip(1))
       _parseCsvLine(l)[0]: _parseCsvLine(l)[textCol],

@@ -13,10 +13,10 @@ Engines
   auto    (default) try edge-tts once; if it is unreachable use espeak for the
           whole run so all lines share one voice.
 
-Re-running skips existing files unless --force is given. A PLACEHOLDER.txt is
-written next to the mp3s; delete the placeholders and the note when real
-recordings replace them (the release check in test/release_audio_test.dart
-fails while PLACEHOLDER.txt exists and RELEASE=1).
+Re-running skips existing files unless --force is given. Every file is
+recorded as "placeholder" in docs/audio_manifest_{lang}.json; the release
+test fails until tools/ingest_recordings.py has replaced each one with a
+studio recording. Studio recordings are never overwritten, even with --force.
 """
 import argparse
 import asyncio
@@ -26,6 +26,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import audio_manifest  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "hi", "te"]
@@ -116,25 +119,32 @@ def main():
 def generate(lang, engine, synth, force):
     out = out_dir(lang)
     out.mkdir(parents=True, exist_ok=True)
-    made = skipped = 0
-    for line_id, text in read_lines(lang):
-        dest = out / f"{line_id}.mp3"
-        if dest.exists() and not force:
-            skipped += 1
-            continue
-        synth(text, dest, lang)
-        made += 1
-        print(f"  {engine}: {dest.relative_to(ROOT)}")
-
+    manifest = audio_manifest.load(lang, ROOT)
     voice = (EDGE_VOICES[lang] if engine == "edge"
              else "espeak-ng " + " ".join(["-v", ESPEAK_VOICES[lang], *ESPEAK_RATE]))
-    (out / "PLACEHOLDER.txt").write_text(
-        "These mp3s are machine-generated PLACEHOLDERS - not for release.\n"
-        f"Engine/voice: {voice}\n"
-        f"Regenerate: python3 tools/gen_placeholder_audio.py --lang {lang} --force\n"
-        "Replace with real recordings, then delete this file.\n"
-    )
-    print(f"{lang}: {made} generated, {skipped} skipped, engine={engine}")
+    made = skipped = protected = 0
+    for line_id, text in read_lines(lang):
+        dest = out / f"{line_id}.mp3"
+        entry = manifest.get(line_id, {})
+        if entry.get("source") == "studio":
+            protected += 1  # never replace a real recording with a placeholder
+            continue
+        if dest.exists() and not force:
+            skipped += 1
+            if not entry:
+                audio_manifest.record(manifest, line_id, dest, "placeholder", voice)
+            continue
+        synth(text, dest, lang)
+        audio_manifest.record(manifest, line_id, dest, "placeholder", voice)
+        made += 1
+        print(f"  {engine}: {dest.relative_to(ROOT)}")
+    audio_manifest.save(lang, manifest, ROOT)
+    legacy = out / "PLACEHOLDER.txt"
+    if legacy.exists():
+        legacy.unlink()
+    print(f"{lang}: {made} generated, {skipped} skipped, "
+          f"{protected} studio kept, engine={engine}")
+
 
 if __name__ == "__main__":
     main()
