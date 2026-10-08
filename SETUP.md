@@ -74,7 +74,12 @@ via `tools/ingest_recordings.py` — see docs/VOICE_PRODUCTION.md.
 the Hindi/Telugu translations are reviewed (docs/TRANSLATION_REVIEW.md).
 Device QA: docs/RELEASE_QA.md.
 
-## 9. Run
+## 9. Release signing
+
+Store builds need the Play upload key: see docs/release/SIGNING.md
+(`tools/create_upload_key.sh`, then `REQUIRE_UPLOAD_KEY=true flutter build appbundle --release`).
+
+## 10. Run
 
 ```bash
 flutter run

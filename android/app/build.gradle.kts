@@ -1,7 +1,41 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// ── Release signing (upload key) ─────────────────────────────────────────────
+// Google Play App Signing holds the app signing key; we sign uploads with our
+// upload key. Values come from android/key.properties (local machine, never
+// committed) or, if absent, environment variables (CI secrets).
+// See docs/release/SIGNING.md.
+val keyProperties = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+fun signingValue(property: String, env: String): String? =
+    (keyProperties.getProperty(property) ?: System.getenv(env))?.takeIf { it.isNotBlank() }
+
+val uploadStoreFile = signingValue("storeFile", "ANDROID_UPLOAD_STORE_FILE")
+val uploadStorePassword = signingValue("storePassword", "ANDROID_UPLOAD_STORE_PASSWORD")
+val uploadKeyAlias = signingValue("keyAlias", "ANDROID_UPLOAD_KEY_ALIAS")
+val uploadKeyPassword = signingValue("keyPassword", "ANDROID_UPLOAD_KEY_PASSWORD")
+val hasUploadKey = listOf(uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword)
+    .all { it != null }
+
+// Store builds pass -PrequireUploadKey=true (or REQUIRE_UPLOAD_KEY=true):
+// they must fail rather than silently fall back to debug signing.
+val requireUploadKey = (findProperty("requireUploadKey") ?: System.getenv("REQUIRE_UPLOAD_KEY"))
+    ?.toString() == "true"
+if (requireUploadKey && !hasUploadKey) {
+    throw GradleException(
+        "Release signing required but the upload key is not configured. " +
+            "Provide android/key.properties or the ANDROID_UPLOAD_* environment variables " +
+            "(docs/release/SIGNING.md)."
+    )
 }
 
 android {
@@ -18,7 +52,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Permanent once the first build is uploaded to Google Play.
         applicationId = "com.yasin.ai_explorer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,11 +66,23 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasUploadKey) {
+            create("upload") {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Upload key when configured. Otherwise debug keys, so local
+            // `flutter run --release` works — such builds can't be uploaded to
+            // Play, and store builds refuse this path (requireUploadKey).
+            signingConfig = signingConfigs.getByName(if (hasUploadKey) "upload" else "debug")
         }
     }
 }

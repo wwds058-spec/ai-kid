@@ -60,8 +60,57 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Build release app bundle (debug-signed; no store key in CI)
-        run: flutter build appbundle --release
+      # ── Release signing (docs/release/SIGNING.md) ──────────────────────────
+      - name: Store build without an upload key must fail (no silent debug signing)
+        run: |
+          if REQUIRE_UPLOAD_KEY=true flutter build appbundle --release > nokey.log 2>&1; then
+            echo "::error::store build succeeded without an upload key"; exit 1
+          fi
+          grep -q "upload key is not configured" nokey.log
+          echo "OK: refused as expected"
+
+      - name: Signed release bundle with a throwaway key (proves the wiring)
+        run: |
+          KS="$RUNNER_TEMP/throwaway.jks"
+          keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias upload \
+            -keyalg RSA -keysize 2048 -validity 1 -storepass ci-throwaway -keypass ci-throwaway \
+            -dname "CN=CI throwaway, O=AI Explorer CI" 2>/dev/null
+          ANDROID_UPLOAD_STORE_FILE="$KS" ANDROID_UPLOAD_STORE_PASSWORD=ci-throwaway \
+          ANDROID_UPLOAD_KEY_ALIAS=upload ANDROID_UPLOAD_KEY_PASSWORD=ci-throwaway \
+          REQUIRE_UPLOAD_KEY=true flutter build appbundle --release
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | tee verify.txt
+          grep -q "jar verified" verify.txt
+          expected=$(keytool -list -v -keystore "$KS" -alias upload -storepass ci-throwaway | awk -F': ' '/SHA256:/{print $2; exit}')
+          actual=$(keytool -printcert -jarfile "$AAB" | awk -F': ' '/SHA256:/{print $2; exit}')
+          echo "expected $expected"; echo "actual   $actual"
+          [ "$expected" = "$actual" ] || { echo "::error::bundle not signed by the upload key"; exit 1; }
+          if keytool -printcert -jarfile "$AAB" | grep -q "CN=Android Debug"; then
+            echo "::error::bundle is debug-signed"; exit 1
+          fi
+
+      - name: Store bundle with the real upload key (when repository secrets exist)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          REVENUECAT_ANDROID_KEY: ${{ secrets.REVENUECAT_ANDROID_KEY }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "Upload-key secrets not set yet; skipping (docs/release/SIGNING.md)."
+            exit 0
+          fi
+          export ANDROID_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload-keystore.jks"
+          echo "$KEYSTORE_B64" | base64 -d > "$ANDROID_UPLOAD_STORE_FILE"
+          REQUIRE_UPLOAD_KEY=true flutter build appbundle --release \
+            --dart-define=REVENUECAT_ANDROID_KEY="$REVENUECAT_ANDROID_KEY"
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | grep -q "jar verified"
+          echo "Upload certificate SHA-256 (public):"
+          keytool -printcert -jarfile "$AAB" | awk -F': ' '/SHA256:/{print $2; exit}'
+          mkdir -p store && cp "$AAB" store/ai-explorer-store.aab
+          rm -f "$ANDROID_UPLOAD_STORE_FILE"
 
       - name: Verify the built APK targets API 36
         run: |
@@ -75,5 +124,12 @@ jobs:
           name: ai-explorer-android
           path: |
             build/app/outputs/flutter-apk/app-debug.apk
-            build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
+
+      - name: Upload store bundle (only when signed with the real upload key)
+        if: hashFiles('store/ai-explorer-store.aab') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-explorer-store-aab
+          path: store/ai-explorer-store.aab
+          retention-days: 14
