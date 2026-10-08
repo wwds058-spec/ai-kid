@@ -17,9 +17,10 @@ class _Audio extends Fake implements AudioService {
 
 class _Speech extends Fake implements SpeechService {
   @override
-  Future<void> startListening(
+  Future<bool> startListening(
           {required String localeId,
-          required void Function(String) onResult}) async {}
+          required void Function(String) onResult}) async =>
+      true;
   @override
   Future<void> stopListening() async {}
   @override

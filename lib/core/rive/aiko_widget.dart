@@ -29,6 +29,22 @@ class AikoWidget extends StatefulWidget {
     'sad':       5,
   };
 
+  /// The character file, loaded once per app run. Null if it is missing or
+  /// unreadable: Aiko then shows as the emoji fallback instead of throwing.
+  static Future<RiveFile?>? _riveFile;
+
+  /// Forget the cached load (tests run many app lifetimes in one process).
+  @visibleForTesting
+  static void resetRiveCache() => _riveFile = null;
+  static Future<RiveFile?> loadRiveFile() => _riveFile ??= () async {
+        try {
+          return await RiveFile.asset('assets/rive/aiko.riv');
+        } catch (e) {
+          debugPrint('[AikoWidget] Rive file unavailable, using fallback: $e');
+          return null;
+        }
+      }();
+
   /// Emotion string as defined in EpisodeScript.emotion
   final String emotion;
 
@@ -91,16 +107,23 @@ class _AikoWidgetState extends State<AikoWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final fallback = _AikoFallback(emotion: widget.emotion);
     return SizedBox(
       width: 240,
       height: 240,
-      child: RiveAnimation.asset(
-        'assets/rive/aiko.riv',
-        stateMachines: const [kStateMachine],
-        onInit: _onRiveInit,
-        // Fallback while asset loads or if .riv is missing in dev
-        placeHolder: _AikoFallback(emotion: widget.emotion),
-        fit: BoxFit.contain,
+      child: FutureBuilder<RiveFile?>(
+        future: AikoWidget.loadRiveFile(),
+        builder: (context, snap) {
+          final file = snap.data;
+          if (file == null) return fallback;
+          return RiveAnimation.direct(
+            file,
+            stateMachines: const [kStateMachine],
+            onInit: _onRiveInit,
+            placeHolder: fallback,
+            fit: BoxFit.contain,
+          );
+        },
       ),
     );
   }

@@ -21,16 +21,40 @@ class EpisodePlayerScreen extends ConsumerStatefulWidget {
   ConsumerState<EpisodePlayerScreen> createState() => _EpisodePlayerScreenState();
 }
 
-class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen> {
+class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Start the episode on next frame (controller must be built first)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(episodeControllerProvider(widget.episodeId).notifier)
           .start(lang: ref.read(languageProvider));
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Background, lock screen, incoming call screen: hold the episode.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    final ctrl = ref.read(episodeControllerProvider(widget.episodeId).notifier);
+    switch (lifecycle) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        ctrl.pause();
+      case AppLifecycleState.resumed:
+        ctrl.resume();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   @override

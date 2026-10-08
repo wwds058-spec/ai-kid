@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
+import 'core/audio/audio_service.dart';
 import 'core/purchases/subscription_provider.dart';
 import 'core/security/monotonic_clock.dart';
 import 'core/storage/hive_storage_service.dart';
@@ -25,11 +26,20 @@ Future<void> main() async {
   // Storage first: the cached entitlement lets the app start offline.
   await HiveStorageService.init();
 
+  // Spoken-content audio session; follows calls/alarms/other apps.
+  final audio = AudioService();
+  try {
+    await audio.init();
+  } catch (_) {
+    // Audio session unavailable (rare): playback still works without it.
+  }
+
   // Tamper-proof clock for the parent-PIN lockout.
   final clock = await PlatformMonotonicClock.create();
 
   final container = ProviderContainer(overrides: [
     monotonicClockProvider.overrideWithValue(clock),
+    audioServiceProvider.overrideWithValue(audio),
   ]);
   runApp(
     UncontrolledProviderScope(

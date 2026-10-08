@@ -28,15 +28,18 @@ Open `android/app/src/main/AndroidManifest.xml` and add these lines
 <uses-permission android:name="android.permission.INTERNET"/>
 ```
 
-## 4. Add your RevenueCat API key
+## 4. RevenueCat API key (build time)
 
-Open `lib/main.dart` and replace the placeholder:
+The key is not in the source. Pass it when building:
 
-```dart
-const _kRevenueCatKey = 'YOUR_REVENUECAT_PUBLIC_SDK_KEY';
+```bash
+flutter run --dart-define=REVENUECAT_ANDROID_KEY=goog_xxx
+flutter build appbundle --release --dart-define=REVENUECAT_ANDROID_KEY=goog_xxx
 ```
 
+Without it the app runs with purchases unavailable (free content only).
 Get it from app.revenuecat.com → Project → API keys → Public app-specific.
+See docs/BILLING_TESTING.md.
 
 ## 5. Install dependencies
 
@@ -63,15 +66,13 @@ The state machine must be named **`Aiko_Controller`** with two inputs:
 
 Until the file is ready, `AikoWidget` automatically shows the emoji fallback.
 
-## 8. Add placeholder audio files
+## 8. Audio
 
-The app won't crash without audio files — `AudioService` catches the error.
-Add real `.mp3` files to `assets/audio/en/` using the naming convention:
-
-```
-assets/audio/en/{line_id}.mp3
-e.g. assets/audio/en/pf_ep01_s1_intro.mp3
-```
+Placeholder mp3s for en/hi/te are committed. Studio recordings replace them
+via `tools/ingest_recordings.py` — see docs/VOICE_PRODUCTION.md.
+`RELEASE=1 flutter test` fails until every line is a studio recording and
+the Hindi/Telugu translations are reviewed (docs/TRANSLATION_REVIEW.md).
+Device QA: docs/RELEASE_QA.md.
 
 ## 9. Run
 

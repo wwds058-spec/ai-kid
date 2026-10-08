@@ -25,6 +25,7 @@ part 'episode_controller.g.dart';
 @riverpod
 class EpisodeController extends _$EpisodeController {
   Timer? _speechTimer;
+  bool _paused = false;
 
   @override
   EpisodeState build(String episodeId) {
@@ -104,13 +105,38 @@ class EpisodeController extends _$EpisodeController {
         state = (state as EpisodeRunning)
             .copyWith(awaitingSpeech: true, lineEmotion: null);
         _startSpeechTimeout();
-        _startListening();
+        await _startListening();
 
       case DisclosureSpeech(audioOverride: final audio):
         // Play "tell a grown-up", log event (no content), advance
         await _say(audio);
         _logDisclosure();
         await _nextStep();
+    }
+  }
+
+  /// App went to the background (or the screen is covered): hold everything.
+  /// The current line pauses mid-way, the mic closes and the answer timeout
+  /// stops, so nothing advances while the child isn't there.
+  Future<void> pause() async {
+    if (_paused) return;
+    _paused = true;
+    _speechTimer?.cancel();
+    await ref.read(audioServiceProvider).pause();
+    if (_runningOrNull()?.awaitingSpeech ?? false) {
+      await ref.read(speechServiceProvider).stopListening();
+    }
+  }
+
+  /// App back in the foreground: continue the line, or re-open the mic with
+  /// a fresh timeout if Aiko was waiting for an answer.
+  Future<void> resume() async {
+    if (!_paused) return;
+    _paused = false;
+    await ref.read(audioServiceProvider).resume();
+    if (_runningOrNull()?.awaitingSpeech ?? false) {
+      _startSpeechTimeout();
+      await _startListening();
     }
   }
 
@@ -156,18 +182,26 @@ class EpisodeController extends _$EpisodeController {
       case AdvanceMode.speech:
         state = (state as EpisodeRunning).copyWith(awaitingSpeech: true);
         _startSpeechTimeout();
-        _startListening();
+        await _startListening();
     }
   }
 
   /// Start the microphone — transcript delivered via [handleSpeech].
-  void _startListening() {
+  /// If the mic can't be used (permission denied, no offline speech model),
+  /// don't leave the child waiting in silence: move on to the next step.
+  Future<void> _startListening() async {
     final running = _runningOrNull();
-    if (running == null) return;
-    ref.read(speechServiceProvider).startListening(
+    if (running == null || _paused) return;
+    final started = await ref.read(speechServiceProvider).startListening(
           localeId: speechLocale(running.lang),
           onResult: handleSpeech,
         );
+    final s = _runningOrNull();
+    if (!started && s != null && s.awaitingSpeech && !_paused) {
+      _speechTimer?.cancel();
+      state = s.copyWith(awaitingSpeech: false);
+      await _nextStep();
+    }
   }
 
   Future<void> _nextStep() async {

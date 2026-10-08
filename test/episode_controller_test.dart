@@ -15,25 +15,33 @@ class FakeAudio extends Fake implements AudioService {
   final played = <String>[];
   final langs = <String>{};
   void Function(String lineId)? onPlay;
+  int pauses = 0, resumes = 0;
   @override
   Future<void> play(String lineId, {String lang = 'en'}) async {
     played.add(lineId);
     langs.add(lang);
     onPlay?.call(lineId);
   }
+
+  @override
+  Future<void> pause() async => pauses++;
+  @override
+  Future<void> resume() async => resumes++;
 }
 
 class FakeSpeech extends Fake implements SpeechService {
   int started = 0;
   int stopped = 0;
   String? localeId;
+  bool micAvailable = true;
   @override
-  Future<void> startListening({
+  Future<bool> startListening({
     required String localeId,
     required void Function(String transcript) onResult,
   }) async {
     started++;
     this.localeId = localeId;
+    return micAvailable;
   }
   @override
   Future<void> stopListening() async => stopped++;
@@ -289,5 +297,96 @@ void main() {
     expect(speech.started, 0);
     expect(audio.played, isNot(contains('a4')), reason: 'prompt not played');
     expect(st(), isA<EpisodeComplete>());
+  });
+
+  group('real-device conditions', () {
+    test('mic denied / no offline model: speaking step is skipped at once',
+        () async {
+      audio = FakeAudio();
+      speech = FakeSpeech()..micAvailable = false;
+      storage = FakeStorage();
+      container = ProviderContainer(overrides: [
+        episodeLoaderProvider.overrideWithValue(FakeLoader(_script())),
+        audioServiceProvider.overrideWithValue(audio),
+        speechServiceProvider.overrideWithValue(speech),
+        hiveStorageServiceProvider.overrideWithValue(storage),
+      ]);
+      addTearDown(container.dispose);
+      container.listen(episodeControllerProvider('pf_test'), (_, __) {});
+      await ctrl().start();
+      await reachSpeakStep();
+      expect(speech.started, 1);
+      expect(st(), isA<EpisodeComplete>(),
+          reason: 'no 8-second silent wait for a mic that cannot open');
+      expect(audio.played, isNot(contains('fb')));
+    });
+
+    test('backgrounded while waiting for an answer: no timeout, mic closed; '
+        'resume re-opens the mic', () async {
+      await boot(timeout: 1);
+      await reachSpeakStep();
+      final stopsBefore = speech.stopped;
+      await ctrl().pause();
+      expect(audio.pauses, 1);
+      expect(speech.stopped, stopsBefore + 1);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(audio.played, isNot(contains('fb')),
+          reason: 'timeout must not fire while the app is in the background');
+      expect((st() as EpisodeRunning).awaitingSpeech, isTrue);
+
+      await ctrl().resume();
+      expect(audio.resumes, 1);
+      expect(speech.started, 2);
+      await ctrl().handleSpeech('yes');
+      expect(audio.played, contains('r_yes'));
+    });
+
+    test('pause/resume are idempotent', () async {
+      await boot();
+      await ctrl().pause();
+      await ctrl().pause();
+      await ctrl().resume();
+      await ctrl().resume();
+      expect(audio.pauses, 1);
+      expect(audio.resumes, 1);
+    });
+
+    test('repeated taps advance only one step', () async {
+      await boot();
+      await Future.wait([ctrl().handleTap(), ctrl().handleTap(), ctrl().handleTap()]);
+      expect((st() as EpisodeRunning).stepIndex, 2);
+      expect(audio.played.where((l) => l == 'a3'), hasLength(1));
+    });
+
+    test('repeated correct-answer taps advance only once', () async {
+      await boot();
+      await ctrl().handleTap();
+      await Future.wait([
+        ctrl().handleAnswer('blue'),
+        ctrl().handleAnswer('blue'),
+        ctrl().handleAnswer('blue'),
+      ]);
+      expect((st() as EpisodeRunning).stepIndex, 3);
+      expect(audio.played.where((l) => l == 'a4'), hasLength(1));
+    });
+
+    test('a burst of wrong taps never skips the game', () async {
+      await boot();
+      await ctrl().handleTap();
+      await Future.wait([for (var i = 0; i < 10; i++) ctrl().handleAnswer('red')]);
+      expect((st() as EpisodeRunning).stepIndex, 2);
+      expect((st() as EpisodeRunning).awaitingAnswer, isTrue);
+    });
+
+    test('speech result after leaving the step is ignored', () async {
+      await boot();
+      await reachSpeakStep();
+      await ctrl().handleSpeech('yes');
+      final n = audio.played.length;
+      await ctrl().handleSpeech('yes');
+      await ctrl().handleSpeech('no');
+      expect(audio.played.length, n);
+    });
   });
 }

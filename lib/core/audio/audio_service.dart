@@ -1,23 +1,42 @@
+import 'dart:async';
+
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'audio_service.g.dart';
 
-/// Plays pre-recorded audio lines from assets.
+/// Plays pre-recorded audio lines from assets/audio/{lang}/{line_id}.mp3.
 ///
-/// Asset naming convention:
-///   assets/audio/{lang}/{line_id}.mp3
-///
-/// Example:
-///   audio line id  = 'pf_ep01_s1'
-///   emotion suffix  = not in filename — emotion drives Rive, not audio
-///   assets/audio/en/pf_ep01_s1.mp3
+/// [play] completes only when the line has really finished (or was replaced
+/// by another line / [stop]). Pausing — app sent to background, phone call,
+/// another app taking audio focus — does NOT complete it, so the episode
+/// waits instead of racing ahead through its steps unattended.
 class AudioService {
   final AudioPlayer _player = AudioPlayer();
+  StreamSubscription<AudioInterruptionEvent>? _interruptions;
+  bool _pausedByInterruption = false;
 
-  /// Play a single audio line.
-  /// [lineId] — e.g. 'pf_ep01_s1'
-  /// [lang]   — 'en' | 'hi' | 'te'
+  /// Configure the audio session for spoken content and follow system
+  /// interruptions (calls, alarms, other apps). Call once at start-up.
+  Future<void> init() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.speech());
+    _interruptions = session.interruptionEventStream.listen((e) {
+      if (e.begin) {
+        if (_player.playing) {
+          _pausedByInterruption = true;
+          _player.pause();
+        }
+      } else if (_pausedByInterruption &&
+          e.type != AudioInterruptionType.unknown) {
+        _pausedByInterruption = false;
+        _player.play();
+      }
+    });
+  }
+
+  /// Play a single audio line ([lang] = 'en' | 'hi' | 'te').
   /// Falls back to the English recording if the [lang] file is missing, so a
   /// gap in a translation never leaves the child in silence.
   Future<void> play(String lineId, {String lang = 'en'}) async {
@@ -36,8 +55,6 @@ class AudioService {
     try {
       await _player.stop();
       await _player.setAsset(path);
-      await _player.play();
-      return true;
     } catch (e) {
       // File missing in dev (just_audio may throw PlayerException or
       // PlatformException) — log and continue so the engine doesn't stall
@@ -45,17 +62,29 @@ class AudioService {
       print('[AudioService] Missing asset: $path — $e');
       return false;
     }
+    final finished = _player.processingStateStream.firstWhere((s) =>
+        s == ProcessingState.completed || s == ProcessingState.idle);
+    unawaited(_player.play());
+    await finished;
+    return true;
+  }
+
+  /// App going to background: hold the current line where it is.
+  Future<void> pause() => _player.pause();
+
+  /// App back in the foreground: continue the held line, if any.
+  Future<void> resume() async {
+    if (_player.processingState == ProcessingState.ready && !_player.playing) {
+      await _player.play();
+    }
   }
 
   Future<void> stop() => _player.stop();
 
-  /// Duration of current clip (null if not loaded)
-  Duration? get duration => _player.duration;
-
-  /// Stream so UI can show progress bar if desired
-  Stream<Duration> get positionStream => _player.positionStream;
-
-  void dispose() => _player.dispose();
+  void dispose() {
+    _interruptions?.cancel();
+    _player.dispose();
+  }
 }
 
 @riverpod

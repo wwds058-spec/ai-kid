@@ -22,6 +22,7 @@ dependencies:
 
   # Audio
   just_audio: ^0.9.40
+  audio_session: ^0.1.25
 
   # Speech recognition (on-device)
   speech_to_text: ^6.6.2

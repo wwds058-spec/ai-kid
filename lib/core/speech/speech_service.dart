@@ -30,20 +30,23 @@ class SpeechService {
   /// [localeId] — BCP-47 locale, e.g. 'en-IN', 'hi-IN', 'te-IN'.
   ///              Ignored if the device doesn't support it (falls back to default).
   /// [onResult]  — called with the best final transcript once speech ends.
-  Future<void> startListening({
+  /// Returns false if the mic can't be used (permission denied, no offline
+  /// model for this language, recogniser busy).
+  Future<bool> startListening({
     required String localeId,
     required void Function(String transcript) onResult,
   }) async {
     final ready = await init();
-    if (!ready || _stt.isListening) return;
+    if (!ready || _stt.isListening) return false;
 
-    await _stt.listen(
+    try {
+      await _stt.listen(
       localeId: localeId,
       listenFor: const Duration(seconds: 12),
       pauseFor: const Duration(seconds: 3),
       // Privacy: never send a child's voice to a cloud recogniser. If the
       // device has no offline model for this language, listening fails and
-      // the step's timeout fallback plays instead.
+      // the episode skips the speaking step.
       listenOptions: stt.SpeechListenOptions(
         onDevice: true,
         partialResults: false,
@@ -55,6 +58,10 @@ class SpeechService {
         }
       },
     );
+    } catch (_) {
+      return false; // e.g. no on-device model for this locale
+    }
+    return true;
   }
 
   Future<void> stopListening() async {
