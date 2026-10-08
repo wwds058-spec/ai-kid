@@ -7,23 +7,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The unlock expires after [ttl] and is never persisted, so a restart or a
 /// child picking up the device later always meets the PIN again.
 class ParentGate {
-  ParentGate({this.ttl = const Duration(minutes: 5), DateTime Function()? now})
-      : _now = now ?? DateTime.now;
+  ParentGate({this.ttl = const Duration(minutes: 5), Duration Function()? elapsed})
+      : _elapsed = elapsed ?? (Stopwatch()..start()).elapsedFunc;
 
   final Duration ttl;
-  final DateTime Function() _now;
-  DateTime? _unlockedAt;
+
+  /// Monotonic time (an in-process stopwatch): the unlock window can't be
+  /// stretched by changing the device clock.
+  final Duration Function() _elapsed;
+  Duration? _unlockedAt;
 
   bool get isUnlocked {
     final at = _unlockedAt;
-    return at != null && _now().difference(at) < ttl;
+    return at != null && _elapsed() - at < ttl;
   }
 
   /// Call only after the PIN has been verified (or just set).
-  void unlock() => _unlockedAt = _now();
+  void unlock() => _unlockedAt = _elapsed();
 
   /// Call when the parent leaves the dashboard.
   void lock() => _unlockedAt = null;
+}
+
+extension on Stopwatch {
+  Duration Function() get elapsedFunc => () => elapsed;
 }
 
 final parentGateProvider = Provider<ParentGate>((ref) => ParentGate());

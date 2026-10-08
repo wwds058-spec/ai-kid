@@ -17,8 +17,10 @@ class ParentSettings with _$ParentSettings {
     @Default(0) int failedPinAttempts,
     /// Lockouts since the last correct PIN; each one doubles the cooldown
     @Default(0) int pinLockouts,
-    /// PIN entry is refused until this time
-    DateTime? pinLockedUntil,
+    /// Lock time still to wait, as of [lockCheckpointMs] (see PinLockout)
+    int? lockRemainingMs,
+    /// Monotonic-clock reading (ms since boot) when the lock was last saved
+    int? lockCheckpointMs,
   }) = _ParentSettings;
 
   factory ParentSettings.fromJson(Map<String, dynamic> json) =>

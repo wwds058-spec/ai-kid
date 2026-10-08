@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ai_explorer/core/safety/safety_layer.dart';
 import 'package:ai_explorer/core/speech/intent_router.dart';
 import 'package:ai_explorer/curriculum/episode_catalog.dart';
+import 'package:ai_explorer/l10n/parent_strings.dart';
 import 'package:ai_explorer/l10n/review_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -104,7 +105,7 @@ void main() {
         : 'only enforced when RELEASE=1');
   });
 
-  test('child-facing screens contain no hard-coded text', () {
+  test('screens contain no hard-coded text (child and parent)', () {
     // Anything a child reads must come from AppStrings, so it is translated.
     // A literal with two or more letters that aren't part of a ${...}/$name
     // interpolation.
@@ -118,6 +119,9 @@ void main() {
       'lib/features/world_map',
       'lib/features/episode_player',
       'lib/features/reward',
+      // Parent screens: English today, but all text must come from
+      // ParentStrings so hi/te can be added without touching the screens.
+      'lib/features/parent_dashboard',
     ]) {
       for (final f in Directory(dir).listSync().whereType<File>()) {
         final src = f.readAsStringSync();
@@ -128,5 +132,13 @@ void main() {
         expect(hardCoded, isEmpty, reason: f.path);
       }
     }
+  });
+
+  test('parent strings: every language listed resolves, unknown falls back', () {
+    expect(ParentStrings.of('en'), same(ParentStrings.en));
+    for (final lang in kLanguages) {
+      expect(ParentStrings.of(lang), isNotNull);
+    }
+    expect(ParentStrings.en.digitWords, hasLength(10));
   });
 }

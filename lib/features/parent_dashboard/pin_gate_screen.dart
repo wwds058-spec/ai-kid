@@ -6,18 +6,23 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../core/security/grown_up_check.dart';
+import '../../core/security/monotonic_clock.dart';
 import '../../core/security/parent_gate.dart';
 import '../../core/security/pin_lockout.dart';
 import '../../core/security/pin_service.dart';
 import '../../core/storage/models/parent_settings.dart';
 import '../../curriculum/episode_controller.dart';
+import '../../l10n/language.dart';
+import '../../l10n/parent_strings.dart';
 
 /// PIN gate that sits in front of [ParentDashboardScreen].
 ///
-/// Behaviour:
-///  • No PIN set → shows "Create PIN" flow (first-time setup)
-///  • PIN set    → shows keypad to verify; after 3 wrong attempts entry is
-///    locked for a cooldown that persists across visits (see [PinLockout])
+///  • No PIN set → grown-up check ([GrownUpCheck]) → create PIN → confirm
+///  • PIN set    → enter PIN
+///  • 3 wrong entries (PIN or grown-up check) lock entry for a cooldown that
+///    persists across visits and restarts and ignores the device clock
+///    ([PinLockout] on a [MonotonicClock]).
 class PinGateScreen extends ConsumerStatefulWidget {
   const PinGateScreen({super.key});
 
@@ -25,130 +30,136 @@ class PinGateScreen extends ConsumerStatefulWidget {
   ConsumerState<PinGateScreen> createState() => _PinGateScreenState();
 }
 
-class _PinGateScreenState extends ConsumerState<PinGateScreen> {
-  String _entry = '';
-  String _confirmEntry = '';      // used during set-PIN flow
-  bool _isConfirmStep = false;    // set-PIN step 2
-  Timer? _unlockTimer;
+enum _Stage { grownUpCheck, createPin, confirmPin, enterPin }
 
+class _PinGateScreenState extends ConsumerState<PinGateScreen> {
   static const int _kPinLength = 4;
+
+  String _entry = '';
+  String _newPin = '';
+  late _Stage _stage;
+  GrownUpCheck? _check;
+  bool _checkWasWrong = false;
+  Timer? _tick;
 
   ParentSettings get _settings =>
       ref.read(hiveStorageServiceProvider).getSettings();
-
-  bool get _locked => PinLockout.isLocked(_settings, DateTime.now());
+  Duration get _now => ref.read(monotonicClockProvider).elapsed();
+  bool get _locked => PinLockout.isLocked(_settings, _now);
 
   @override
   void initState() {
     super.initState();
-    _scheduleUnlock();
+    if (_settings.pinHash != null) {
+      _stage = _Stage.enterPin;
+    } else {
+      _stage = _Stage.grownUpCheck;
+      _newCheck();
+    }
+    _checkpoint();
+    // Re-check the lock regularly: rebuild when it ends, and checkpoint so a
+    // reboot only loses the time since the last tick.
+    _tick = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      _checkpoint();
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _unlockTimer?.cancel();
+    _tick?.cancel();
     super.dispose();
   }
 
-  /// Rebuild when the cooldown ends so the keypad comes back by itself.
-  void _scheduleUnlock() {
-    _unlockTimer?.cancel();
-    final wait = PinLockout.remaining(_settings, DateTime.now());
-    if (wait > Duration.zero) {
-      _unlockTimer = Timer(wait, () {
-        if (mounted) setState(() {});
-      });
-    }
+  void _newCheck() =>
+      _check = GrownUpCheck.random(ref.read(grownUpRandomProvider));
+
+  void _checkpoint() {
+    final storage = ref.read(hiveStorageServiceProvider);
+    final s = storage.getSettings();
+    final next = PinLockout.checkpoint(s, _now);
+    if (next != s) storage.saveSettings(next);
   }
 
-  bool get _hasPinSet {
-    final settings = ref.read(hiveStorageServiceProvider).getSettings();
-    return settings.pinHash != null;
+  Future<void> _fail() async {
+    final storage = ref.read(hiveStorageServiceProvider);
+    await storage.saveSettings(
+        PinLockout.recordFailure(storage.getSettings(), _now));
   }
 
   void _onKey(String digit) {
-    if (_locked) return;
-    setState(() {
-      if (_isConfirmStep) {
-        if (_confirmEntry.length < _kPinLength) {
-          _confirmEntry += digit;
-          if (_confirmEntry.length == _kPinLength) _finishSetPin();
-        }
-      } else {
-        if (_entry.length < _kPinLength) {
-          _entry += digit;
-          if (_entry.length == _kPinLength) {
-            _hasPinSet ? _verify() : _finishEnterPin();
-          }
-        }
-      }
-    });
+    if (_locked || _entry.length >= _kPinLength) return;
+    setState(() => _entry += digit);
+    if (_entry.length == _kPinLength) _submit();
   }
 
   void _onDelete() {
-    setState(() {
-      if (_isConfirmStep) {
-        if (_confirmEntry.isNotEmpty) {
-          _confirmEntry = _confirmEntry.substring(0, _confirmEntry.length - 1);
-        }
-      } else {
-        if (_entry.isNotEmpty) {
-          _entry = _entry.substring(0, _entry.length - 1);
-        }
-      }
-    });
+    if (_entry.isEmpty) return;
+    setState(() => _entry = _entry.substring(0, _entry.length - 1));
   }
 
-  /// Step 1 done — move to confirm
-  void _finishEnterPin() {
-    setState(() {
-      _isConfirmStep = true;
-      _confirmEntry = '';
-    });
-  }
-
-  /// Step 2 done — save hashed PIN and navigate into dashboard
-  void _finishSetPin() {
-    if (_entry != _confirmEntry) {
-      // Pins don't match — restart
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('PINs did not match. Try again.')));
-      setState(() {
-        _entry = '';
-        _confirmEntry = '';
-        _isConfirmStep = false;
-      });
-      return;
-    }
+  Future<void> _submit() async {
+    final entry = _entry;
+    setState(() => _entry = '');
     final storage = ref.read(hiveStorageServiceProvider);
-    final settings = storage.getSettings();
-    storage.saveSettings(settings.copyWith(pinHash: PinService.hash(_entry)));
+    switch (_stage) {
+      case _Stage.grownUpCheck:
+        if (_check!.check(entry)) {
+          setState(() {
+            _stage = _Stage.createPin;
+            _checkWasWrong = false;
+          });
+        } else {
+          await _fail();
+          setState(() {
+            _checkWasWrong = true;
+            _newCheck();
+          });
+        }
+      case _Stage.createPin:
+        setState(() {
+          _newPin = entry;
+          _stage = _Stage.confirmPin;
+        });
+      case _Stage.confirmPin:
+        if (entry != _newPin) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(ref.read(parentStringsProvider).pinsDidNotMatch)));
+          }
+          setState(() => _stage = _Stage.createPin);
+          return;
+        }
+        await storage.saveSettings(PinLockout.recordSuccess(
+            storage.getSettings().copyWith(pinHash: PinService.hash(_newPin))));
+        _open();
+      case _Stage.enterPin:
+        final s = storage.getSettings();
+        if (PinService.verify(entry, s.pinHash ?? '')) {
+          await storage.saveSettings(PinLockout.recordSuccess(s));
+          _open();
+        } else {
+          await _fail();
+          setState(() {});
+        }
+    }
+  }
+
+  void _open() {
     ref.read(parentGateProvider).unlock();
-    context.go(Routes.parentDashboard);
-  }
-
-  void _verify() {
-    final storage = ref.read(hiveStorageServiceProvider);
-    final settings = storage.getSettings();
-    final correct = PinService.verify(_entry, settings.pinHash ?? '');
-    if (correct) {
-      storage.saveSettings(PinLockout.recordSuccess(settings));
-      ref.read(parentGateProvider).unlock();
-      context.go(Routes.parentDashboard);
-    } else {
-      storage.saveSettings(PinLockout.recordFailure(settings, DateTime.now()));
-      setState(() => _entry = '');
-      _scheduleUnlock();
-    }
+    if (mounted) context.go(Routes.parentDashboard);
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = ref.watch(parentStringsProvider);
+    final locked = _locked;
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: const Text('Parent Area',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(p.parentArea,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: AIExplorerTheme.purple,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -157,67 +168,78 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
         ),
       ),
       body: Center(
-        // Scrolls on short screens instead of overflowing when the
-        // wrong-attempt message appears.
+        // Scrolls on short screens instead of overflowing.
         child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 340),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 40),
-              _buildDots(),
-              const SizedBox(height: 40),
-              if (_locked)
-                _LockedMessage(
-                    PinLockout.remaining(_settings, DateTime.now()))
-              else
-                _buildKeypad(),
-            ],
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildHeader(p, locked),
+                const SizedBox(height: 32),
+                _buildDots(),
+                const SizedBox(height: 32),
+                if (locked)
+                  _LockedMessage(p.tryAgainIn(
+                      PinLockout.remaining(_settings, _now).inMinutes + 1))
+                else
+                  _buildKeypad(),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    if (_locked) {
-      return const Text('Too many wrong attempts.',
-          style: TextStyle(color: Colors.redAccent, fontSize: 18),
+  static const _title = TextStyle(
+      color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700);
+  static const _warn = TextStyle(color: Colors.orangeAccent, fontSize: 14);
+
+  Widget _buildHeader(ParentStrings p, bool locked) {
+    if (locked) {
+      return Text(p.tooManyAttempts,
+          style: const TextStyle(color: Colors.redAccent, fontSize: 18),
           textAlign: TextAlign.center);
     }
-    if (!_hasPinSet) {
-      return Text(
-        _isConfirmStep ? 'Confirm your PIN' : 'Create a 4-digit PIN',
-        style: const TextStyle(color: Colors.white, fontSize: 22,
-            fontWeight: FontWeight.w700),
-        textAlign: TextAlign.center,
-      );
-    }
-    final settings = _settings;
-    final remaining = PinLockout.attemptsLeft(settings);
-    return Column(
-      children: [
-        const Text('Enter parent PIN',
-            style: TextStyle(color: Colors.white, fontSize: 22,
-                fontWeight: FontWeight.w700)),
-        if (settings.failedPinAttempts > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Wrong PIN. $remaining attempt${remaining == 1 ? '' : 's'} left.',
-              style: const TextStyle(color: Colors.orangeAccent, fontSize: 14),
+    final attemptsLeft = PinLockout.attemptsLeft(_settings);
+    final showAttempts = _settings.failedPinAttempts > 0;
+    return switch (_stage) {
+      _Stage.grownUpCheck => Column(children: [
+          Text(p.grownUpCheckTitle, style: _title, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Text(p.grownUpCheckPrompt,
+              style: const TextStyle(color: Colors.white70, fontSize: 15),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(_check!.prompt(p.digitWords),
+              key: const ValueKey('grown_up_prompt'),
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center),
+          if (_checkWasWrong)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(p.grownUpCheckWrong, style: _warn),
             ),
-          ),
-      ],
-    );
+        ]),
+      _Stage.createPin =>
+        Text(p.createPin, style: _title, textAlign: TextAlign.center),
+      _Stage.confirmPin =>
+        Text(p.confirmPin, style: _title, textAlign: TextAlign.center),
+      _Stage.enterPin => Column(children: [
+          Text(p.enterPin, style: _title),
+          if (showAttempts)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(p.wrongPin(attemptsLeft), style: _warn),
+            ),
+        ]),
+    };
   }
 
   Widget _buildDots() {
-    final filled = _isConfirmStep ? _confirmEntry.length : _entry.length;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_kPinLength, (i) {
@@ -226,9 +248,7 @@ class _PinGateScreenState extends ConsumerState<PinGateScreen> {
           width: 20, height: 20,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: i < filled
-                ? AIExplorerTheme.purple
-                : Colors.white24,
+            color: i < _entry.length ? AIExplorerTheme.purple : Colors.white24,
           ),
         );
       }),
@@ -292,20 +312,17 @@ class _KeyButton extends StatelessWidget {
 }
 
 class _LockedMessage extends StatelessWidget {
-  final Duration remaining;
-  const _LockedMessage(this.remaining);
+  final String text;
+  const _LockedMessage(this.text);
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         const Text('🔒', style: TextStyle(fontSize: 64)),
         const SizedBox(height: 16),
-        Text(
-          'Try again in ${remaining.inMinutes + 1} '
-          'minute${remaining.inMinutes == 0 ? '' : 's'}.',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
+        Text(text,
+            style: const TextStyle(color: Colors.white54, fontSize: 16),
+            textAlign: TextAlign.center),
       ],
     );
   }
