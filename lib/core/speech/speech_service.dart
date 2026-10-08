@@ -41,7 +41,14 @@ class SpeechService {
       localeId: localeId,
       listenFor: const Duration(seconds: 12),
       pauseFor: const Duration(seconds: 3),
-      partialResults: false,
+      // Privacy: never send a child's voice to a cloud recogniser. If the
+      // device has no offline model for this language, listening fails and
+      // the step's timeout fallback plays instead.
+      listenOptions: stt.SpeechListenOptions(
+        onDevice: true,
+        partialResults: false,
+        cancelOnError: true,
+      ),
       onResult: (result) {
         if (result.finalResult) {
           onResult(result.recognizedWords);

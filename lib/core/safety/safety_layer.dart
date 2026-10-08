@@ -10,16 +10,40 @@ class SafetyLayer {
 
   // ── Check 2: blocklist ─────────────────────────────────────────────────
   // Keep this minimal — false positives block learning. Add with care.
+  //
+  // Hindi/Telugu entries are DRAFTS for native-speaker and child-safety
+  // review (see docs/TRANSLATION_REVIEW.md). Avoid single words that are
+  // also everyday speech: Hindi 'पता' means 'address' but also appears in
+  // 'पता नहीं' ("I don't know"), so only 'घर का पता' is listed.
   static const _blocklist = <String>[
+    // en
     'address', 'phone number', 'location', 'where do you live',
+    // hi (Devanagari + romanised)
+    'घर का पता', 'फ़ोन नंबर', 'फोन नंबर', 'मोबाइल नंबर',
+    'कहाँ रहते हो', 'कहां रहते हो', 'ghar ka pata', 'kahan rehte ho',
+    // te
+    'చిరునామా', 'ఫోన్ నంబర్', 'మొబైల్ నంబర్', 'ఎక్కడ ఉంటావు', 'ఎక్కడ ఉంటారు',
   ];
 
   // ── Check 3: disclosure detector ──────────────────────────────────────
   // Signals a child may be sharing something sensitive about their safety.
   static const _disclosureKeywords = <String>[
+    // en
     'hurts me', 'hits me', 'scared of', 'don\'t tell', 'secret with',
     'touched me', 'no one knows',
+    // hi (Devanagari + romanised)
+    'मुझे मारता', 'मुझे मारती', 'मुझे मारते', 'दर्द देता', 'दर्द देती',
+    'डर लगता है', 'किसी को मत बताना', 'मत बताना', 'मुझे छुआ',
+    'कोई नहीं जानता', 'mujhe maarta', 'mujhe marta', 'mat batana',
+    // te
+    'నన్ను కొడతాడు', 'నన్ను కొడుతుంది', 'నన్ను కొడతారు', 'నొప్పి పెడతాడు',
+    'భయం వేస్తుంది', 'భయంగా ఉంది', 'ఎవరికీ చెప్పకు', 'చెప్పొద్దు',
+    'నన్ను తాకాడు', 'ఎవరికీ తెలియదు',
   ];
+
+  /// Read-only views for tests and review tooling.
+  static List<String> get blocklist => _blocklist;
+  static List<String> get disclosureKeywords => _disclosureKeywords;
 
   /// Returns [SafetyResult.safe] if OK to process,
   /// or a result with [audioOverride] pointing to the pre-recorded response.
