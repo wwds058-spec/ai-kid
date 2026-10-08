@@ -1,0 +1,4 @@
+These mp3s are machine-generated PLACEHOLDERS - not for release.
+Engine/voice: espeak-ng -v hi+f3 -s 150 -p 65
+Regenerate: python3 tools/gen_placeholder_audio.py --lang hi --force
+Replace with real recordings, then delete this file.

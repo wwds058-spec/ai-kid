@@ -2,7 +2,9 @@
   "id": "pf_ep02",
   "world": "pattern_forest",
   "title": {
-    "en": "Aiko Learns from Examples"
+    "en": "Aiko Learns from Examples",
+    "hi": "आइको उदाहरणों से सीखती है",
+    "te": "ఐకో ఉదాహరణల నుంచి నేర్చుకుంటుంది"
   },
   "premium": false,
   "steps": [

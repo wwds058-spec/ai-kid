@@ -5,20 +5,67 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/purchases/purchase_service.dart';
+import '../../core/purchases/subscription_provider.dart';
 import '../../core/security/parent_gate.dart';
+import '../../curriculum/episode_catalog.dart';
 import '../../curriculum/episode_controller.dart';
+import '../../l10n/language.dart';
+import '../../l10n/strings.dart';
 
 /// Parent Dashboard — protected by PIN in Phase 2.
 /// Phase 1: stub showing basic stats and settings toggles.
-class ParentDashboardScreen extends ConsumerWidget {
+class ParentDashboardScreen extends ConsumerStatefulWidget {
   const ParentDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ParentDashboardScreen> createState() =>
+      _ParentDashboardScreenState();
+}
+
+class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
+  bool _busy = false;
+
+  static const _purchaseMessages = {
+    PurchaseResult.unlocked: '✅ Premium unlocked!',
+    PurchaseResult.cancelled: 'Purchase cancelled.',
+    PurchaseResult.notEntitled:
+        'The store accepted the payment but Premium did not activate. '
+            'Try "Restore Purchases".',
+    PurchaseResult.unavailable:
+        "Purchases aren't available right now. Check your connection.",
+    PurchaseResult.failed: 'Purchase failed. Please try again.',
+  };
+
+  Future<void> _run(Future<String> Function() action) async {
+    setState(() => _busy = true);
+    final message = await action();
+    // PurchaseService has written the new entitlement; publish it so the
+    // world map and episodes unlock immediately.
+    ref.read(subscriptionProvider.notifier).refresh();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<String> _upgrade() async =>
+      _purchaseMessages[await ref.read(purchaseServiceProvider).buyAnnual()]!;
+
+  Future<String> _restore() async =>
+      await ref.read(purchaseServiceProvider).restorePurchases()
+          ? '✅ Premium restored!'
+          : 'No purchases found.';
+
+  @override
+  Widget build(BuildContext context) {
     final storage = ref.read(hiveStorageServiceProvider);
     final settings = storage.getSettings();
     final progress = storage.allProgress();
-    final sub = storage.getSubscription();
+    final sub = ref.watch(subscriptionProvider);
+    final lang = ref.watch(languageProvider);
+    final inGrace = sub.isActiveWithGrace &&
+        sub.expiresAt != null &&
+        DateTime.now().isAfter(sub.expiresAt!);
 
     return Scaffold(
       appBar: AppBar(
@@ -50,18 +97,43 @@ class ParentDashboardScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           // ── Subscription ───────────────────────────────────────────────
           _SectionTitle('Subscription'),
-          _StatRow('Status', sub.isPremium ? '✅ Premium' : '🔓 Free'),
+          _StatRow(
+              'Status',
+              !sub.isActiveWithGrace
+                  ? '🔓 Free'
+                  : inGrace
+                      ? '⚠️ Premium (expired, grace period)'
+                      : '✅ Premium'),
           if (sub.expiresAt != null)
             _StatRow('Expires', sub.expiresAt!.toLocal().toString().split(' ').first),
 
           const SizedBox(height: 24),
           // ── Settings (toggles — Phase 1 read-only) ────────────────────
           _SectionTitle('Settings'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Language', style: TextStyle(fontSize: 15)),
+              DropdownButton<String>(
+                key: const ValueKey('language_dropdown'),
+                value: lang,
+                items: [
+                  for (final code in kLanguages)
+                    DropdownMenuItem(
+                        value: code, child: Text(AppStrings.nativeNames[code]!)),
+                ],
+                onChanged: (code) {
+                  if (code != null) ref.read(languageProvider.notifier).set(code);
+                },
+              ),
+            ],
+          ),
           _SettingRow(
             label: 'Voice interaction',
             value: settings.voiceEnabled,
             onChanged: (v) {
               storage.saveSettings(settings.copyWith(voiceEnabled: v));
+              setState(() {});
             },
           ),
           _SettingRow(
@@ -69,36 +141,27 @@ class ParentDashboardScreen extends ConsumerWidget {
             value: settings.aiInteractionEnabled,
             onChanged: (v) {
               storage.saveSettings(settings.copyWith(aiInteractionEnabled: v));
+              setState(() {});
             },
           ),
           _StatRow('Daily limit', '${settings.dailyLimitMinutes} minutes'),
 
           const SizedBox(height: 32),
-          if (!sub.isPremium)
+          if (!sub.isActiveWithGrace || inGrace)
             ElevatedButton(
-              onPressed: () async {
-                final svc = ref.read(purchaseServiceProvider);
-                final offerings = await svc.fetchOfferings();
-                final pkg = offerings?.current?.annual;
-                if (pkg == null) return;
-                await svc.purchase(pkg);
-              },
-              child: const Text('Upgrade to Premium'),
+              onPressed: _busy ? null : () => _run(_upgrade),
+              child: Text(inGrace ? 'Renew Premium' : 'Upgrade to Premium'),
             ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () async {
-              final restored =
-                  await ref.read(purchaseServiceProvider).restorePurchases();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(
-                      restored ? '✅ Premium restored!' : 'No purchases found.'),
-                ));
-              }
-            },
+            onPressed: _busy ? null : () => _run(_restore),
             child: const Text('Restore Purchases'),
           ),
+          if (_busy)
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
@@ -129,11 +192,17 @@ class _StatRow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 16)),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600,
-                    color: AIExplorerTheme.purple)),
+            Flexible(child: Text(label, style: const TextStyle(fontSize: 16))),
+            const SizedBox(width: 12),
+            // Long values (e.g. the grace-period status) wrap instead of
+            // overflowing on narrow phones or with large accessibility text.
+            Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600,
+                      color: AIExplorerTheme.purple)),
+            ),
           ],
         ),
       );

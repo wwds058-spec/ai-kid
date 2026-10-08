@@ -18,17 +18,32 @@ class AudioService {
   /// Play a single audio line.
   /// [lineId] — e.g. 'pf_ep01_s1'
   /// [lang]   — 'en' | 'hi' | 'te'
+  /// Falls back to the English recording if the [lang] file is missing, so a
+  /// gap in a translation never leaves the child in silence.
   Future<void> play(String lineId, {String lang = 'en'}) async {
-    final path = 'assets/audio/$lang/$lineId.mp3';
+    for (final path in audioPaths(lineId, lang)) {
+      if (await _tryPlay(path)) return;
+    }
+  }
+
+  /// Asset paths to try, in order, for [lineId] in [lang].
+  static List<String> audioPaths(String lineId, String lang) => [
+        'assets/audio/$lang/$lineId.mp3',
+        if (lang != 'en') 'assets/audio/en/$lineId.mp3',
+      ];
+
+  Future<bool> _tryPlay(String path) async {
     try {
       await _player.stop();
       await _player.setAsset(path);
       await _player.play();
+      return true;
     } catch (e) {
       // File missing in dev (just_audio may throw PlayerException or
       // PlatformException) — log and continue so the engine doesn't stall
       // ignore: avoid_print
       print('[AudioService] Missing asset: $path — $e');
+      return false;
     }
   }
 

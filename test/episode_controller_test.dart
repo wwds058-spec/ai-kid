@@ -1,8 +1,5 @@
 import 'package:ai_explorer/core/audio/audio_service.dart';
 import 'package:ai_explorer/core/speech/speech_service.dart';
-import 'package:ai_explorer/core/storage/hive_storage_service.dart';
-import 'package:ai_explorer/core/storage/models/episode_progress.dart';
-import 'package:ai_explorer/core/storage/models/parent_settings.dart';
 import 'package:ai_explorer/core/storage/models/subscription_state.dart';
 import 'package:ai_explorer/curriculum/episode_controller.dart';
 import 'package:ai_explorer/curriculum/episode_loader.dart';
@@ -11,43 +8,34 @@ import 'package:ai_explorer/curriculum/models/episode_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/fake_storage.dart';
+
 class FakeAudio extends Fake implements AudioService {
   final played = <String>[];
+  final langs = <String>{};
   @override
-  Future<void> play(String lineId, {String lang = 'en'}) async =>
-      played.add(lineId);
+  Future<void> play(String lineId, {String lang = 'en'}) async {
+    played.add(lineId);
+    langs.add(lang);
+  }
 }
 
 class FakeSpeech extends Fake implements SpeechService {
   int started = 0;
   int stopped = 0;
+  String? localeId;
   @override
   Future<void> startListening({
     required String localeId,
     required void Function(String transcript) onResult,
-  }) async =>
-      started++;
+  }) async {
+    started++;
+    this.localeId = localeId;
+  }
   @override
   Future<void> stopListening() async => stopped++;
   @override
   void dispose() {}
-}
-
-class FakeStorage extends Fake implements HiveStorageService {
-  final progress = <String, EpisodeProgress>{};
-  ParentSettings settings = const ParentSettings();
-  SubscriptionState sub = const SubscriptionState();
-  @override
-  SubscriptionState getSubscription() => sub;
-  @override
-  EpisodeProgress? getProgress(String id) => progress[id];
-  @override
-  Future<void> saveProgress(EpisodeProgress p) async =>
-      progress[p.episodeId] = p;
-  @override
-  ParentSettings getSettings() => settings;
-  @override
-  Future<void> saveSettings(ParentSettings s) async => settings = s;
 }
 
 class FakeLoader extends Fake implements EpisodeLoader {
@@ -108,7 +96,10 @@ void main() {
   EpisodeState st() => container.read(episodeControllerProvider('pf_test'));
 
   Future<void> boot(
-      {int timeout = 8, bool premium = false, SubscriptionState? sub}) async {
+      {int timeout = 8,
+      bool premium = false,
+      SubscriptionState? sub,
+      String lang = 'en'}) async {
     audio = FakeAudio();
     speech = FakeSpeech();
     storage = FakeStorage();
@@ -122,7 +113,7 @@ void main() {
     ]);
     addTearDown(container.dispose);
     container.listen(episodeControllerProvider('pf_test'), (_, __) {});
-    await ctrl().start();
+    await ctrl().start(lang: lang);
   }
 
   Future<void> reachSpeakStep() async {
@@ -231,5 +222,22 @@ void main() {
   test('premium episode plays for an active subscriber', () async {
     await boot(premium: true, sub: const SubscriptionState(isPremium: true));
     expect(st(), isA<EpisodeRunning>());
+  });
+
+  test('Hindi episode plays Hindi audio and listens in hi-IN', () async {
+    await boot(lang: 'hi');
+    await reachSpeakStep();
+    expect(audio.langs, {'hi'});
+    expect(speech.localeId, 'hi-IN');
+    await ctrl().handleSpeech('हाँ');
+    expect(audio.played, contains('r_yes'));
+  });
+
+  test('Telugu "I don\'t know" resolves to DONT_KNOW', () async {
+    await boot(lang: 'te');
+    await reachSpeakStep();
+    expect(speech.localeId, 'te-IN');
+    await ctrl().handleSpeech('నాకు తెలియదు');
+    expect(audio.played, contains('r_dk'));
   });
 }

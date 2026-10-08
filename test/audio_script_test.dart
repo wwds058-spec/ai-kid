@@ -1,56 +1,47 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:ai_explorer/curriculum/models/episode_script.dart';
+import 'package:ai_explorer/curriculum/episode_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Ids the engine plays regardless of episode content.
-const _sharedIds = {'generic_fallback', 'generic_too_long', 'safety_tell_grownup'};
-
-Set<String> _csvIds() => File('docs/audio_script_en.csv')
-    .readAsLinesSync()
-    .skip(1)
-    .where((l) => l.trim().isNotEmpty)
-    .map((l) => l.split(',').first)
-    .toSet();
+import 'support/content.dart';
 
 void main() {
-  test('every audio id used by an episode (and the engine) is in the script',
-      () {
-    final needed = <String>{..._sharedIds};
-    for (final f in Directory('assets/episodes')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))) {
-      final ep = EpisodeScript.fromJson(
-          jsonDecode(f.readAsStringSync()) as Map<String, dynamic>);
-      for (final s in ep.steps) {
-        needed.add(s.audio);
-        if (s.onWrong != null) needed.add(s.onWrong!);
-        if (s.fallback != null) needed.add(s.fallback!);
-        needed.addAll(s.intents.map((i) => i.audio));
-      }
-    }
-    expect(_csvIds().containsAll(needed), isTrue,
-        reason: 'missing: ${needed.difference(_csvIds())}');
-  });
+  final used = {
+    ...kSharedAudioIds,
+    for (final f in loadEpisodeFiles()) ...f.audioIds,
+  };
 
-  test('script has no stale ids that nothing plays', () {
-    final used = <String>{..._sharedIds};
-    for (final f in Directory('assets/episodes')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))) {
-      final ep = EpisodeScript.fromJson(
-          jsonDecode(f.readAsStringSync()) as Map<String, dynamic>);
-      for (final s in ep.steps) {
-        used.add(s.audio);
-        if (s.onWrong != null) used.add(s.onWrong!);
-        if (s.fallback != null) used.add(s.fallback!);
-        used.addAll(s.intents.map((i) => i.audio));
-      }
+  for (final lang in kLanguages) {
+    group('[$lang] audio script', () {
+      final script = loadAudioScript(lang);
+
+      test('has no line ids that nothing plays', () {
+        expect(script.keys.toSet().difference(used), isEmpty);
+      });
+
+      test('covers every played id with non-empty text', () {
+        expect(used.difference(script.keys.toSet()), isEmpty);
+        for (final e in script.entries) {
+          expect(e.value.trim(), isNotEmpty, reason: e.key);
+        }
+      });
+
+      test('has no stray mp3s without a script line', () {
+        final mp3s = Directory('assets/audio/$lang')
+            .listSync()
+            .map((e) => e.uri.pathSegments.last)
+            .where((n) => n.endsWith('.mp3'))
+            .map((n) => n.replaceAll('.mp3', ''))
+            .toSet();
+        expect(mp3s.difference(script.keys.toSet()), isEmpty);
+      });
+    });
+  }
+
+  test('translations line up with English one-to-one', () {
+    final en = loadAudioScript('en').keys.toSet();
+    for (final lang in kLanguages) {
+      expect(loadAudioScript(lang).keys.toSet(), en, reason: lang);
     }
-    expect(used.containsAll(_csvIds()), isTrue,
-        reason: 'stale: ${_csvIds().difference(used)}');
   });
 }

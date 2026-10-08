@@ -8,6 +8,7 @@ import '../../core/rive/aiko_widget.dart';
 import '../../curriculum/episode_controller.dart';
 import '../../curriculum/models/episode_state.dart';
 import '../../curriculum/models/episode_script.dart';
+import '../../l10n/language.dart';
 
 /// The generic episode player.
 /// Driven entirely by [EpisodeState] from [EpisodeController].
@@ -26,7 +27,9 @@ class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen> {
     super.initState();
     // Start the episode on next frame (controller must be built first)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(episodeControllerProvider(widget.episodeId).notifier).start();
+      ref
+          .read(episodeControllerProvider(widget.episodeId).notifier)
+          .start(lang: ref.read(languageProvider));
     });
   }
 
@@ -66,7 +69,10 @@ class _EpisodePlayerScreenState extends ConsumerState<EpisodePlayerScreen> {
             return const _LoadingView();
           },
           locked: () => const _LockedView(),
-          error: (msg) => _ErrorView(message: msg),
+          error: (msg) {
+            debugPrint('[EpisodePlayer] $msg');
+            return const _ErrorView();
+          },
         ),
       ),
     );
@@ -83,10 +89,12 @@ class _LoadingView extends StatelessWidget {
       );
 }
 
-class _LockedView extends StatelessWidget {
+class _LockedView extends ConsumerWidget {
   const _LockedView();
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider);
+    return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -94,32 +102,47 @@ class _LockedView extends StatelessWidget {
             children: [
               const Text('🔒', style: TextStyle(fontSize: 64)),
               const SizedBox(height: 16),
-              const Text('This adventure needs Premium.\nAsk a grown-up!',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+              Text(t.episodeLocked,
+                  style: const TextStyle(color: Colors.white, fontSize: 20),
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => context.go(Routes.worldMap),
-                child: const Text('Back to Worlds 🗺️'),
+                child: Text(t.backToWorlds),
               ),
             ],
           ),
         ),
       );
+  }
 }
 
-class _ErrorView extends StatelessWidget {
-  final String message;
-  const _ErrorView({required this.message});
+/// Friendly failure screen; the technical message goes to the debug log,
+/// not to the child.
+class _ErrorView extends ConsumerWidget {
+  const _ErrorView();
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(message,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 16),
-              textAlign: TextAlign.center),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(t.loadError,
+                style: const TextStyle(color: Colors.white, fontSize: 20),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.go(Routes.worldMap),
+              child: Text(t.backToWorlds),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _RunningView extends StatelessWidget {
@@ -184,7 +207,7 @@ class _RunningView extends StatelessWidget {
 }
 
 
-class _StepIndicator extends StatelessWidget {
+class _StepIndicator extends ConsumerWidget {
   final EpisodeStep step;
   final bool awaitingTap, awaitingAnswer, awaitingSpeech;
   final ValueChanged<String> onAnswer;
@@ -196,12 +219,13 @@ class _StepIndicator extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider);
     if (awaitingTap) {
-      return const _HintChip(label: 'Tap anywhere to continue →');
+      return _HintChip(label: t.tapToContinue);
     }
     if (awaitingSpeech) {
-      return const _HintChip(label: '🎤 Say something…', highlight: true);
+      return _HintChip(label: t.saySomething, highlight: true);
     }
     if (awaitingAnswer && step.gameConfig != null) {
       return _PatternGame(config: step.gameConfig!, onAnswer: onAnswer);

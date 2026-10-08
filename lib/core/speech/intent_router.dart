@@ -10,14 +10,25 @@ part 'intent_router.g.dart';
 ///  2. Try keyword match: does the transcript contain any keyword for this intent?
 ///  3. Fall back to 'UNKNOWN' → episode uses its fallback audio
 class IntentRouter {
-  /// Map of intent name → list of trigger keywords/phrases
+  /// Map of intent name → list of trigger keywords/phrases.
   /// These are global; episode-specific ones can override via [extraKeywords].
+  ///
+  /// On-device STT returns native script for hi-IN (Devanagari) and te-IN
+  /// (Telugu), so each intent lists English, romanised and native-script
+  /// forms. Native-script entries are drafts: review with native speakers.
   static const Map<String, List<String>> _intentKeywords = {
-    'YES':              ['yes', 'yeah', 'yep', 'haan', 'ha', 'ok', 'okay'],
-    'NO':               ['no', 'nahi', 'nope', 'nah'],
+    'YES':              ['yes', 'yeah', 'yep', 'haan', 'ha', 'ok', 'okay',
+                         'हाँ', 'हां', 'जी', 'ठीक है',
+                         'అవును', 'ఔను', 'సరే'],
+    'NO':               ['no', 'nahi', 'nope', 'nah',
+                         'नहीं', 'ना', 'లేదు', 'కాదు'],
     'DONT_KNOW':        ["don't know", "dont know", "i don't know", 'no idea',
-                         'not sure', 'mujhe nahi pata', 'teliyadu'],
-    'WHAT_IS_PATTERN':  ['what is pattern', 'what pattern', 'pattern kya hai'],
+                         'not sure', 'mujhe nahi pata', 'teliyadu',
+                         'पता नहीं', 'नहीं पता', 'मालूम नहीं',
+                         'తెలియదు', 'నాకు తెలియదు'],
+    'WHAT_IS_PATTERN':  ['what is pattern', 'what pattern', 'pattern kya hai',
+                         'पैटर्न क्या है', 'पैटर्न क्या होता है',
+                         'ప్యాటర్న్ అంటే ఏమిటి', 'ప్యాటర్న్ అంటే ఏంటి'],
     'WHAT_IS_AI':       ['what is ai', 'what is artificial intelligence',
                          'ai kya hai'],
     'WHAT_IS_DATA':     ['what is data', 'data kya hai'],
@@ -26,8 +37,12 @@ class IntentRouter {
     'MORE':             ['more', 'tell me more', 'aur batao'],
     'DONE':             ['done', 'finished', 'complete', 'ho gaya'],
     'COLORS':           ['red', 'blue', 'green', 'yellow', 'orange', 'purple',
-                         'color', 'colour'],
-    'SHAPES':           ['circle', 'square', 'triangle', 'rectangle', 'shape'],
+                         'color', 'colour',
+                         'रंग', 'लाल', 'नीला', 'हरा', 'पीला',
+                         'రంగు', 'రంగులు', 'ఎరుపు', 'నీలం', 'ఆకుపచ్చ', 'పసుపు'],
+    'SHAPES':           ['circle', 'square', 'triangle', 'rectangle', 'shape',
+                         'आकार', 'गोला', 'वृत्त', 'वर्ग', 'त्रिभुज',
+                         'ఆకారం', 'ఆకారాలు', 'వృత్తం', 'చతురస్రం', 'త్రిభుజం'],
     'NUMBERS':          ['one', 'two', 'three', 'four', 'five', 'number'],
     'ANIMALS':          ['cat', 'dog', 'bird', 'fish', 'animal'],
     'SKIP':             ['skip', 'next', 'aage', 'go next'],
@@ -71,8 +86,10 @@ class IntentRouter {
   }
 
   /// True if [phrase] occurs in [text] bounded by non-letter/digit characters.
+  /// Combining marks (\p{M}) count as part of a word: Indic vowel signs are
+  /// marks, so 'हा' must not match inside 'हाँ'.
   static bool _containsPhrase(String text, String phrase) => RegExp(
-        '(?<![\\p{L}\\p{N}\'])${RegExp.escape(phrase)}(?![\\p{L}\\p{N}\'])',
+        '(?<![\\p{L}\\p{M}\\p{N}\'])${RegExp.escape(phrase)}(?![\\p{L}\\p{M}\\p{N}\'])',
         unicode: true,
       ).hasMatch(text);
 }

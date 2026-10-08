@@ -8,6 +8,21 @@ import '../storage/models/subscription_state.dart';
 
 part 'purchase_service.g.dart';
 
+/// What happened when a parent tried to buy Premium.
+enum PurchaseResult {
+  /// Store charged and the 'premium' entitlement is now active.
+  unlocked,
+  /// Parent closed the store sheet.
+  cancelled,
+  /// Store reported success but no 'premium' entitlement came back
+  /// (usually a RevenueCat product/entitlement misconfiguration).
+  notEntitled,
+  /// No offering/package to sell (offline, or none configured).
+  unavailable,
+  /// Any other store error.
+  failed,
+}
+
 /// Wraps RevenueCat and keeps [SubscriptionState] in Hive in sync.
 ///
 /// Call [PurchaseService.configure] once in main() AFTER HiveStorageService.init().
@@ -44,24 +59,28 @@ class PurchaseService {
   Future<bool> restorePurchases() async {
     try {
       final info = await Purchases.restorePurchases();
-      return _applyCustomerInfo(info);
+      return await _applyCustomerInfo(info);
     } catch (_) {
       return false;
     }
   }
 
-  /// Purchase a product by its RevenueCat package.
-  /// Returns true on success.
-  Future<bool> purchase(Package package) async {
+  /// Buy the current offering's annual package. Never throws.
+  Future<PurchaseResult> buyAnnual() async {
+    final package = (await fetchOfferings())?.current?.annual;
+    if (package == null) return PurchaseResult.unavailable;
     try {
       final info = await Purchases.purchasePackage(package);
-      return _applyCustomerInfo(info);
+      return await _applyCustomerInfo(info)
+          ? PurchaseResult.unlocked
+          : PurchaseResult.notEntitled;
     } on PlatformException catch (e) {
-      if (PurchasesErrorHelper.getErrorCode(e) ==
-          PurchasesErrorCode.purchaseCancelledError) {
-        return false;
-      }
-      rethrow;
+      return PurchasesErrorHelper.getErrorCode(e) ==
+              PurchasesErrorCode.purchaseCancelledError
+          ? PurchaseResult.cancelled
+          : PurchaseResult.failed;
+    } catch (_) {
+      return PurchaseResult.failed;
     }
   }
 
@@ -74,7 +93,7 @@ class PurchaseService {
     }
   }
 
-  bool _applyCustomerInfo(CustomerInfo info) {
+  Future<bool> _applyCustomerInfo(CustomerInfo info) async {
     final isPremium = info.entitlements.active.containsKey('premium');
     final expiresAt = isPremium
         ? DateTime.tryParse(
@@ -83,7 +102,7 @@ class PurchaseService {
     final productId =
         info.entitlements.active['premium']?.productIdentifier;
 
-    _storage.saveSubscription(
+    await _storage.saveSubscription(
       SubscriptionState(
         isPremium: isPremium,
         expiresAt: expiresAt,

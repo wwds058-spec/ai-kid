@@ -1,73 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../core/purchases/subscription_provider.dart';
+import '../../curriculum/badges.dart';
 import '../../curriculum/episode_catalog.dart';
+import '../../l10n/language.dart';
 
 /// Shown when a child completes an episode.
 /// Displays earned badges with celebration animation.
-class RewardScreen extends StatelessWidget {
+class RewardScreen extends ConsumerWidget {
   final String episodeId;
   final List<String> badges;
 
-  const RewardScreen({super.key, required this.episodeId, required this.badges});
-
-  // Badge id → display info
-  static const _badgeMeta = <String, _BadgeMeta>{
-    'pattern_spotter': _BadgeMeta('🔍', 'Pattern Spotter', 'You found the pattern!'),
-    'ai_friend':       _BadgeMeta('🤝', 'AI Friend', 'You worked with Aiko!'),
-    'data_collector':  _BadgeMeta('📊', 'Data Collector', 'You collected data!'),
-  };
+  const RewardScreen(
+      {super.key, required this.episodeId, required this.badges});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider);
+    final next = EpisodeCatalog.next(episodeId);
+    final canPlayNext = next != null &&
+        EpisodeCatalog.canPlay(next, isPremium: ref.watch(isPremiumProvider));
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🎉', style: TextStyle(fontSize: 80))
-                  .animate()
-                  .scale(duration: 500.ms, curve: Curves.elasticOut),
-              const SizedBox(height: 16),
-              const Text('Great job!',
-                      style: TextStyle(
-                          fontSize: 36, fontWeight: FontWeight.w800, color: Colors.white))
-                  .animate()
-                  .fadeIn(delay: 300.ms),
-              const SizedBox(height: 8),
-              Text('You earned ${badges.length} badge${badges.length == 1 ? '' : 's'}!',
-                      style: const TextStyle(fontSize: 18, color: Colors.white54))
-                  .animate()
-                  .fadeIn(delay: 500.ms),
-              const SizedBox(height: 40),
-              // Badge cards
-              ...badges.asMap().entries.map((entry) {
-                final meta = _badgeMeta[entry.value];
-                if (meta == null) return const SizedBox.shrink();
-                return _BadgeCard(meta: meta)
-                    .animate()
-                    .slideY(begin: .3, delay: Duration(milliseconds: 600 + entry.key * 150))
-                    .fadeIn();
-              }),
-              const Spacer(),
-              if (EpisodeCatalog.next(episodeId) case final next?) ...[
-                ElevatedButton(
-                  onPressed: () => context.go(Routes.episodePath(next)),
-                  child: const Text('Next Adventure ▶️'),
-                ).animate().fadeIn(delay: 900.ms),
-                const SizedBox(height: 12),
-              ],
-              TextButton(
-                onPressed: () => context.go(Routes.worldMap),
-                child: const Text('Back to Worlds 🗺️',
-                    style: TextStyle(color: Colors.white70, fontSize: 16)),
-              ).animate().fadeIn(delay: 900.ms),
-            ],
+        // Scrolls when several badges (or longer Hindi/Telugu text) don't
+        // fit; otherwise fills the screen with the buttons at the bottom.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(minHeight: constraints.maxHeight - 48),
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 80))
+                        .animate()
+                        .scale(duration: 500.ms, curve: Curves.elasticOut),
+                    const SizedBox(height: 16),
+                    Text(t.greatJob,
+                            style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white))
+                        .animate()
+                        .fadeIn(delay: 300.ms),
+                    const SizedBox(height: 8),
+                    Text(t.earnedBadges(badges.length),
+                            style: const TextStyle(
+                                fontSize: 18, color: Colors.white54))
+                        .animate()
+                        .fadeIn(delay: 500.ms),
+                    const SizedBox(height: 40),
+                    // Badge cards
+                    ...badges.asMap().entries.map((entry) {
+                      final emoji = kBadgeEmoji[entry.value];
+                      final text = t.badges[entry.value];
+                      if (emoji == null || text == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return _BadgeCard(
+                              emoji: emoji,
+                              name: text.name,
+                              description: text.description)
+                          .animate()
+                          .slideY(
+                              begin: .3,
+                              delay:
+                                  Duration(milliseconds: 600 + entry.key * 150))
+                          .fadeIn();
+                    }),
+                    const Spacer(),
+                    if (canPlayNext) ...[
+                      ElevatedButton(
+                        onPressed: () =>
+                            context.go(Routes.episodePath(next.id)),
+                        child: Text(t.nextAdventure),
+                      ).animate().fadeIn(delay: 900.ms),
+                      const SizedBox(height: 12),
+                    ] else if (next != null) ...[
+                      // Next episode is Premium: say so, but never sell to the child
+                      Text(t.nextNeedsPremium,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 16),
+                          textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                    ],
+                    TextButton(
+                      onPressed: () => context.go(Routes.worldMap),
+                      child: Text(t.backToWorlds,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 16)),
+                    ).animate().fadeIn(delay: 900.ms),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -76,8 +110,9 @@ class RewardScreen extends StatelessWidget {
 }
 
 class _BadgeCard extends StatelessWidget {
-  final _BadgeMeta meta;
-  const _BadgeCard({required this.meta});
+  final String emoji, name, description;
+  const _BadgeCard(
+      {required this.emoji, required this.name, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -91,25 +126,25 @@ class _BadgeCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(meta.emoji, style: const TextStyle(fontSize: 36)),
+          Text(emoji, style: const TextStyle(fontSize: 36)),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(meta.name,
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              Text(meta.description,
-                  style: const TextStyle(color: Colors.white54, fontSize: 14)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700)),
+                Text(description,
+                    style:
+                        const TextStyle(color: Colors.white54, fontSize: 14)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-}
-
-class _BadgeMeta {
-  final String emoji, name, description;
-  const _BadgeMeta(this.emoji, this.name, this.description);
 }

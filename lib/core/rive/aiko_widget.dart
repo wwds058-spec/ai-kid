@@ -16,6 +16,18 @@ import 'package:rive/rive.dart';
 /// [ ] Confirm input names match kEmotionInput / kTalkingInput below
 /// ───────────────────────────────────────────────────────────────────────────
 class AikoWidget extends StatefulWidget {
+  /// Episode `emotion` values. Rive doesn't support string inputs, so each
+  /// maps to the numeric 'emotion' input; indices must match the state
+  /// machine. Episodes may only use these keys (checked by content tests).
+  static const emotionIndex = <String, double>{
+    'normal':    0,
+    'happy':     1,
+    'excited':   2,
+    'curious':   3,
+    'celebrate': 4,
+    'sad':       5,
+  };
+
   /// Emotion string as defined in EpisodeScript.emotion
   final String emotion;
 
@@ -40,17 +52,6 @@ class _AikoWidgetState extends State<AikoWidget> {
   StateMachineController? _controller;
   SMIInput<bool>? _talkingInput;
 
-  // Rive doesn't support string inputs — map emotion to a numeric enum.
-  // These indices must match the 'emotion' Number input in the state machine.
-  static const _emotionIndex = <String, double>{
-    'normal':    0,
-    'happy':     1,
-    'excited':   2,
-    'curious':   3,
-    'celebrate': 4,
-    'sad':       5,
-  };
-
   SMIInput<double>? _emotionInput;
 
   void _onRiveInit(Artboard artboard) {
@@ -67,7 +68,7 @@ class _AikoWidgetState extends State<AikoWidget> {
   }
 
   void _applyEmotion(String emotion) {
-    _emotionInput?.value = _emotionIndex[emotion] ?? 0;
+    _emotionInput?.value = AikoWidget.emotionIndex[emotion] ?? 0;
   }
 
   void _applyTalking(bool talking) {

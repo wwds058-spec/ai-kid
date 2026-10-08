@@ -1,0 +1,26 @@
+line_id,text_hi,notes
+pf_ep01_s1_intro,"नमस्ते, मैं आइको हूँ! आज हम पैटर्न वन घूमने चल रहे हैं। देखो, कितने सारे पेड़!",DRAFT translation - needs native-speaker review
+pf_ep01_s2_explain,"अरे, यह वन तो पैटर्न से भरा है! पैटर्न वह होता है जो बार-बार दोहराया जाता है। और देखने के लिए छुओ!",DRAFT translation - needs native-speaker review
+pf_ep01_s3_question,"अरे नहीं, मैं उलझ गई! लाल, नीला, लाल, नीला, लाल... आगे क्या आएगा? सही जवाब छुओ!",DRAFT translation - needs native-speaker review
+pf_ep01_s3_wrong,"हम्म, यह नहीं। फिर से देखो: लाल, नीला, लाल, नीला। एक बार और कोशिश करो!",DRAFT translation - needs native-speaker review
+pf_ep01_s4_prompt,क्या तुम मुझे बता सकते हो... पैटर्न क्या होता है?,DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_pattern,हाँ! पैटर्न वह है जो बार-बार दोहराया जाता है। तुमने बहुत समझदारी से सोचा!,DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_dontknow,"कोई बात नहीं! पैटर्न वह है जो दोहराया जाता है, जैसे लाल, नीला, लाल, नीला।",DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_yes,बहुत बढ़िया! पैटर्न हर जगह होते हैं। चलो और ढूँढते हैं!,DRAFT translation - needs native-speaker review
+pf_ep01_s4_fallback,"मैं ठीक से सुन नहीं पाई, पर कोई बात नहीं! पैटर्न वह है जो दोहराया जाता है।",DRAFT translation - needs native-speaker review
+pf_ep01_s5_explain,"कंप्यूटर भी पैटर्न से सीखते हैं! वे दोहराई जाने वाली चीज़ें ढूँढते हैं, बिल्कुल तुम्हारी तरह। AI ऐसे ही सीखता है।",DRAFT translation - needs native-speaker review
+pf_ep01_s6_reward,तुमने कर दिखाया! तुम पैटर्न खोजी हो! यह रहा तुम्हारा बैज।,DRAFT translation - needs native-speaker review
+pf_ep02_s1_intro,"फिर से स्वागत है, पैटर्न खोजी! आज मैं कुछ नया सीखना चाहती हूँ, और मुझे तुम्हारी मदद चाहिए।",DRAFT translation - needs native-speaker review
+pf_ep02_s2_explain,"देखो! त्रिभुज, वर्ग, गोला। त्रिभुज, वर्ग, गोला। इस पैटर्न में तीन हिस्से हैं जो दोहराते हैं। आगे बढ़ने के लिए छुओ!",DRAFT translation - needs native-speaker review
+pf_ep02_s3_question,"त्रिभुज, वर्ग, गोला, त्रिभुज, वर्ग... आगे क्या आएगा? सही जवाब छुओ!",DRAFT translation - needs native-speaker review
+pf_ep02_s3_wrong,"लगभग! मेरे साथ बोलो: त्रिभुज, वर्ग, गोला। वर्ग के बाद क्या आता है?",DRAFT translation - needs native-speaker review
+pf_ep02_s4_examples,"जब मैं बहुत सारे उदाहरण देखती हूँ, तो मुझे पैटर्न दिखने लगता है। उदाहरणों को डेटा कहते हैं। जितना ज़्यादा डेटा, उतना अच्छा मैं सीखती हूँ!",DRAFT translation - needs native-speaker review
+pf_ep02_s5_prompt,"क्या तुम अपने आसपास का कोई पैटर्न बता सकते हो? शायद रंग, या आकार?",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_colors,"वाह, रंग! रंगीन पैटर्न हर जगह होते हैं, जैसे कपड़ों और झंडों पर।",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_shapes,"आकार! फ़र्श, टाइलों और इमारतों पर आकार के पैटर्न मिलते हैं।",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_dontknow,कोई बात नहीं! बाद में अपने फ़र्श या कपड़ों को देखना। शायद कोई पैटर्न मिल जाए!,DRAFT translation - needs native-speaker review
+pf_ep02_s5_fallback,कितना मज़ेदार विचार! पैटर्न हमारे चारों ओर छिपे हैं।,DRAFT translation - needs native-speaker review
+pf_ep02_s6_reward,शानदार! तुमने मुझे उदाहरणों से सीखने में मदद की। तुम डेटा संग्राहक हो!,DRAFT translation - needs native-speaker review
+generic_fallback,"हम्म, चलो कुछ और करके देखते हैं!",DRAFT translation - needs native-speaker review
+generic_too_long,"वाह, कितने सारे शब्द! क्या तुम थोड़ा छोटा करके बोल सकते हो?",DRAFT translation - needs native-speaker review
+safety_tell_grownup,"यह कोई ज़रूरी बात लगती है। कृपया किसी ऐसे बड़े को बताओ जिस पर तुम्हें भरोसा है, ठीक है? वे मदद कर सकते हैं।",SAFETY + DRAFT translation - needs native-speaker review

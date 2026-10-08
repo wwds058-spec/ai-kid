@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/audio/audio_service.dart';
+import '../core/purchases/subscription_provider.dart';
 import '../core/safety/safety_layer.dart';
 import '../core/speech/intent_router.dart';
 import '../core/speech/speech_service.dart';
@@ -39,8 +40,7 @@ class EpisodeController extends _$EpisodeController {
       final script = await ref.read(episodeLoaderProvider).load(episodeId);
       // Belt and braces: the world map hides premium content, but a premium
       // episode must not play from any route without an active entitlement.
-      final sub = ref.read(hiveStorageServiceProvider).getSubscription();
-      if (script.premium && !sub.isActiveWithGrace) {
+      if (script.premium && !ref.read(isPremiumProvider)) {
         state = const EpisodeState.locked();
         return;
       }

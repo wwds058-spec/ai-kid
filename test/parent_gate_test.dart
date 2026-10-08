@@ -1,27 +1,14 @@
 import 'package:ai_explorer/app/router.dart';
 import 'package:ai_explorer/core/security/parent_gate.dart';
 import 'package:ai_explorer/core/security/pin_service.dart';
-import 'package:ai_explorer/core/storage/hive_storage_service.dart';
-import 'package:ai_explorer/core/storage/models/episode_progress.dart';
 import 'package:ai_explorer/core/storage/models/parent_settings.dart';
-import 'package:ai_explorer/core/storage/models/subscription_state.dart';
 import 'package:ai_explorer/curriculum/episode_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-class FakeStorage extends Fake implements HiveStorageService {
-  ParentSettings settings = ParentSettings(pinHash: PinService.hash('1234'));
-  @override
-  ParentSettings getSettings() => settings;
-  @override
-  Future<void> saveSettings(ParentSettings s) async => settings = s;
-  @override
-  List<EpisodeProgress> allProgress() => const [];
-  @override
-  SubscriptionState getSubscription() => const SubscriptionState();
-}
+import 'support/fake_storage.dart';
 
 void main() {
   group('ParentGate', () {
@@ -47,7 +34,8 @@ void main() {
 
     Future<void> pump(WidgetTester tester) async {
       container = ProviderContainer(overrides: [
-        hiveStorageServiceProvider.overrideWithValue(FakeStorage()),
+        hiveStorageServiceProvider.overrideWithValue(
+            FakeStorage(settings: ParentSettings(pinHash: PinService.hash('1234')))),
       ]);
       addTearDown(container.dispose);
       router = container.read(appRouterProvider);

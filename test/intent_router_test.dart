@@ -43,4 +43,32 @@ void main() {
       'PICK',
     );
   });
+
+  group('Hindi and Telugu (native script from hi-IN / te-IN STT)', () {
+    test('yes / no / don\'t know', () {
+      expect(m('हाँ', ['YES', 'NO']), 'YES');
+      expect(m('नहीं', ['YES', 'NO']), 'NO');
+      expect(m('मुझे पता नहीं', ['NO', 'DONT_KNOW']), 'DONT_KNOW');
+      expect(m('అవును', ['YES', 'NO']), 'YES');
+      expect(m('లేదు', ['YES', 'NO']), 'NO');
+      expect(m('నాకు తెలియదు', ['NO', 'DONT_KNOW']), 'DONT_KNOW');
+    });
+
+    test('colours and shapes', () {
+      expect(m('लाल और नीला', ['COLORS', 'SHAPES']), 'COLORS');
+      expect(m('त्रिभुज', ['COLORS', 'SHAPES']), 'SHAPES');
+      expect(m('ఎరుపు రంగు', ['COLORS', 'SHAPES']), 'COLORS');
+      expect(m('వృత్తం', ['COLORS', 'SHAPES']), 'SHAPES');
+    });
+
+    test('vowel signs are part of the word (हा must not match inside हाँ)',
+        () {
+      expect(
+          router.match(
+              transcript: 'हाँ',
+              candidates: ['X'],
+              extraKeywords: {'X': ['हा']}),
+          'UNKNOWN');
+    });
+  });
 }

@@ -1,0 +1,26 @@
+line_id,text_te,notes
+pf_ep01_s1_intro,"హాయ్, నేను ఐకోని! ఈ రోజు మనం ప్యాటర్న్ అడవికి వెళ్తున్నాం. ఎన్ని చెట్లో చూడు!",DRAFT translation - needs native-speaker review
+pf_ep01_s2_explain,"అరే, ఈ అడవి నిండా ప్యాటర్న్‌లే! మళ్లీ మళ్లీ వచ్చేదాన్ని ప్యాటర్న్ అంటారు. ఇంకా చూడటానికి తాకు!",DRAFT translation - needs native-speaker review
+pf_ep01_s3_question,"అయ్యో, నాకు అర్థం కావట్లేదు! ఎరుపు, నీలం, ఎరుపు, నీలం, ఎరుపు... తర్వాత ఏది వస్తుంది? సరైన జవాబును తాకు!",DRAFT translation - needs native-speaker review
+pf_ep01_s3_wrong,"హ్మ్, అది కాదు. మళ్లీ చూడు: ఎరుపు, నీలం, ఎరుపు, నీలం. ఇంకోసారి ప్రయత్నించు!",DRAFT translation - needs native-speaker review
+pf_ep01_s4_prompt,నాకు చెప్పగలవా... ప్యాటర్న్ అంటే ఏమిటి?,DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_pattern,అవును! మళ్లీ మళ్లీ వచ్చేదే ప్యాటర్న్. నువ్వు చాలా తెలివిగా ఆలోచించావు!,DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_dontknow,"పర్వాలేదు! మళ్లీ మళ్లీ వచ్చేదే ప్యాటర్న్, ఎరుపు, నీలం, ఎరుపు, నీలం లాగా.",DRAFT translation - needs native-speaker review
+pf_ep01_s4_r_yes,చాలా బాగుంది! ప్యాటర్న్‌లు అన్ని చోట్లా ఉంటాయి. ఇంకా వెతుకుదాం!,DRAFT translation - needs native-speaker review
+pf_ep01_s4_fallback,"నాకు సరిగ్గా వినిపించలేదు, కానీ పర్వాలేదు! మళ్లీ మళ్లీ వచ్చేదే ప్యాటర్న్.",DRAFT translation - needs native-speaker review
+pf_ep01_s5_explain,"కంప్యూటర్లు కూడా ప్యాటర్న్‌ల నుంచి నేర్చుకుంటాయి! నీలాగే, అవి మళ్లీ మళ్లీ వచ్చేవాటిని వెతుకుతాయి. AI అలాగే నేర్చుకుంటుంది.",DRAFT translation - needs native-speaker review
+pf_ep01_s6_reward,నువ్వు సాధించావు! నువ్వు ప్యాటర్న్ స్పాటర్! ఇదిగో నీ బ్యాడ్జ్.,DRAFT translation - needs native-speaker review
+pf_ep02_s1_intro,"మళ్లీ స్వాగతం, ప్యాటర్న్ స్పాటర్! ఈ రోజు నేను కొత్తది నేర్చుకోవాలనుకుంటున్నాను, నాకు నీ సహాయం కావాలి.",DRAFT translation - needs native-speaker review
+pf_ep02_s2_explain,"చూడు! త్రిభుజం, చతురస్రం, వృత్తం. త్రిభుజం, చతురస్రం, వృత్తం. ఈ ప్యాటర్న్‌లో మళ్లీ వచ్చే మూడు భాగాలు ఉన్నాయి. ముందుకు వెళ్లడానికి తాకు!",DRAFT translation - needs native-speaker review
+pf_ep02_s3_question,"త్రిభుజం, చతురస్రం, వృత్తం, త్రిభుజం, చతురస్రం... తర్వాత ఏది వస్తుంది? సరైన జవాబును తాకు!",DRAFT translation - needs native-speaker review
+pf_ep02_s3_wrong,"దాదాపు! నాతో కలిసి చెప్పు: త్రిభుజం, చతురస్రం, వృత్తం. చతురస్రం తర్వాత ఏది వస్తుంది?",DRAFT translation - needs native-speaker review
+pf_ep02_s4_examples,"నేను చాలా ఉదాహరణలు చూసినప్పుడు, ప్యాటర్న్ గమనిస్తాను. ఉదాహరణలను డేటా అంటారు. ఎంత ఎక్కువ డేటా చూస్తే, అంత బాగా నేర్చుకుంటాను!",DRAFT translation - needs native-speaker review
+pf_ep02_s5_prompt,"నీ చుట్టూ ఉన్న ఏదైనా ప్యాటర్న్ చెప్పగలవా? రంగులు కావచ్చు, ఆకారాలు కావచ్చు?",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_colors,"ఓహ్, రంగులు! రంగుల ప్యాటర్న్‌లు బట్టలు, జెండాల మీద అన్ని చోట్లా ఉంటాయి.",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_shapes,"ఆకారాలు! నేల, టైల్స్, భవనాల మీద ఆకారాల ప్యాటర్న్‌లు కనిపిస్తాయి.",DRAFT translation - needs native-speaker review
+pf_ep02_s5_r_dontknow,పర్వాలేదు! తర్వాత నీ నేలను లేదా బట్టలను చూడు. నీకు ఏదైనా ప్యాటర్న్ దొరకొచ్చు!,DRAFT translation - needs native-speaker review
+pf_ep02_s5_fallback,ఎంత సరదా ఆలోచన! ప్యాటర్న్‌లు మన చుట్టూ దాక్కుని ఉన్నాయి.,DRAFT translation - needs native-speaker review
+pf_ep02_s6_reward,అద్భుతం! ఉదాహరణల నుంచి నేర్చుకోవడానికి నువ్వు నాకు సహాయం చేశావు. నువ్వు డేటా కలెక్టర్!,DRAFT translation - needs native-speaker review
+generic_fallback,"హ్మ్, ఇంకోటి ప్రయత్నిద్దాం!",DRAFT translation - needs native-speaker review
+generic_too_long,"వావ్, ఎన్ని మాటలో! కొంచెం చిన్నగా చెప్పగలవా?",DRAFT translation - needs native-speaker review
+safety_tell_grownup,"ఇది ముఖ్యమైన విషయంలా అనిపిస్తోంది. నువ్వు నమ్మే పెద్దవాళ్లకు దీని గురించి చెప్పు, సరేనా? వాళ్లు సహాయం చేస్తారు.",SAFETY + DRAFT translation - needs native-speaker review
